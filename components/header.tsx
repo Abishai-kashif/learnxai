@@ -1,11 +1,13 @@
 import { ThemeToggle } from "@/components/theme-toggle"
+import { FaBrain } from "react-icons/fa";
+
 
 export function Header() {
   return (
     <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-          <span className="text-white font-bold text-sm">L</span>
+        <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+          <FaBrain />
         </div>
         <span className="font-semibold text-lg text-foreground">learnXai</span>
       </div>

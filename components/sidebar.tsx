@@ -1,7 +1,11 @@
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Calendar, BarChart3, Bookmark, Lock, Clock } from "lucide-react"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Clock, Plus, Search } from "lucide-react";
+import { FaBookmark, FaCalendar } from "react-icons/fa";
+import { GiProgression } from "react-icons/gi";
+import { IoIosChatbubbles } from "react-icons/io";
+import { MdBatteryUnknown } from "react-icons/md";
 
 export function Sidebar() {
   const recentSessions = [
@@ -55,20 +59,14 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Active Chat */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs">9</span>
-          </div>
-          <span className="font-medium text-sm text-foreground">Active Chat</span>
-        </div>
-      </div>
-
       {/* Navigation */}
       <div className="p-4 space-y-2">
         <Button variant="ghost" className="w-full justify-start gap-3 h-10">
-          <Lock className="h-4 w-4" />
+          <IoIosChatbubbles className="h-4 w-4" />
+          New Chat
+        </Button>
+        <Button variant="ghost" className="w-full justify-start gap-3 h-10">
+          <MdBatteryUnknown className="h-4 w-4" />
           All Quizzes
           <Badge
             variant="secondary"
@@ -78,15 +76,15 @@ export function Sidebar() {
           </Badge>
         </Button>
         <Button variant="ghost" className="w-full justify-start gap-3 h-10">
-          <Calendar className="h-4 w-4" />
+          <FaCalendar className="h-4 w-4" />
           Study Schedule
         </Button>
         <Button variant="ghost" className="w-full justify-start gap-3 h-10">
-          <BarChart3 className="h-4 w-4" />
+          <GiProgression className="h-4 w-4" />
           Progress Analytics
         </Button>
         <Button variant="ghost" className="w-full justify-start gap-3 h-10">
-          <Bookmark className="h-4 w-4" />
+          <FaBookmark className="h-4 w-4" />
           Saved Topics
         </Button>
       </div>
