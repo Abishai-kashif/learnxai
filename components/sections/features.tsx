@@ -14,10 +14,10 @@ function Features() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <Card className="bg-card border-0 shadow-lg hover:shadow-xl transition-shadow">
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Zap className="w-8 h-8 text-primary" />
+                          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                              <Zap className="w-8 h-8 text-orange-500" />
                 </div>
                 <h3 className="text-xl font-semibold mb-4">Personalized Learning</h3>
                 <p className="text-muted-foreground text-pretty">
@@ -27,10 +27,10 @@ function Features() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <Card className="bg-card border-0 shadow-lg hover:shadow-xl transition-shadow">
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Target className="w-8 h-8 text-primary" />
+                          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                              <Target className="w-8 h-8 text-orange-500" />
                 </div>
                 <h3 className="text-xl font-semibold mb-4">Real-time Feedback</h3>
                 <p className="text-muted-foreground text-pretty">
@@ -39,10 +39,10 @@ function Features() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+                  <Card className="bg-card border-0 shadow-lg hover:shadow-xl transition-shadow">
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <BookOpen className="w-8 h-8 text-primary" />
+                          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                              <BookOpen className="w-8 h-8 text-orange-500" />
                 </div>
                 <h3 className="text-xl font-semibold mb-4">Interactive Content</h3>
                 <p className="text-muted-foreground text-pretty">

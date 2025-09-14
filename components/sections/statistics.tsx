@@ -2,7 +2,7 @@ import React from "react";
 
 function Statistics() {
   return (
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">How SuperAI Works</h2>
@@ -13,9 +13,9 @@ function Statistics() {
 
           <div className="grid md:grid-cols-3 gap-12">
             <div className="text-center">
-              <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 relative">
-                <span className="text-2xl font-bold text-primary-foreground">1</span>
-                <div className="absolute inset-0 rounded-full border-4 border-primary/20"></div>
+                      <div className="w-24 h-24 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                          <span className="text-2xl font-bold text-white">1</span>
+                          <div className="absolute inset-0 rounded-full border-4 border-orange-200"></div>
               </div>
               <h3 className="text-xl font-semibold mb-4">Sign Up & Assess</h3>
               <p className="text-muted-foreground text-pretty">
@@ -24,9 +24,9 @@ function Statistics() {
             </div>
 
             <div className="text-center">
-              <div className="w-24 h-24 bg-chart-2 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                      <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 relative">
                 <span className="text-2xl font-bold text-white">2</span>
-                <div className="absolute inset-0 rounded-full border-4 border-chart-2/20"></div>
+                          <div className="absolute inset-0 rounded-full border-4 border-blue-200"></div>
               </div>
               <h3 className="text-xl font-semibold mb-4">Learn with AI</h3>
               <p className="text-muted-foreground text-pretty">
@@ -35,9 +35,9 @@ function Statistics() {
             </div>
 
             <div className="text-center">
-              <div className="w-24 h-24 bg-chart-3 rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                      <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 relative">
                 <span className="text-2xl font-bold text-white">3</span>
-                <div className="absolute inset-0 rounded-full border-4 border-chart-3/20"></div>
+                          <div className="absolute inset-0 rounded-full border-4 border-green-200"></div>
               </div>
               <h3 className="text-xl font-semibold mb-4">Track Progress</h3>
               <p className="text-muted-foreground text-pretty">

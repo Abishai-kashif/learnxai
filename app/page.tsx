@@ -1,8 +1,10 @@
+import CtaButton from "@/components/cta-button";
 import Cta from "@/components/sections/cta";
 import Features from "@/components/sections/features";
 import Hero from "@/components/sections/hero";
 import Pricing from "@/components/sections/pricing";
 import Statistics from "@/components/sections/statistics";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Brain } from "lucide-react";
 import React from "react";
@@ -11,33 +13,34 @@ function Page() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-white sticky top-0 z-50">
+      <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary-foreground" />
+            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+              <Brain className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold">SuperAI</span>
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-foreground hover:text-primary transition-colors">
+            <a href="#" className="text-foreground hover:text-orange-500 transition-colors">
               Features
             </a>
-            <a href="#" className="text-foreground hover:text-primary transition-colors">
+            <a href="#" className="text-foreground hover:text-orange-500 transition-colors">
               Pricing
             </a>
-            <a href="#" className="text-foreground hover:text-primary transition-colors">
+            <a href="#" className="text-foreground hover:text-orange-500 transition-colors">
               About
             </a>
-            <a href="#" className="text-foreground hover:text-primary transition-colors">
+            <a href="#" className="text-foreground hover:text-orange-500 transition-colors">
               Contact
             </a>
           </nav>
 
           <div className="flex items-center space-x-4">
             <Button variant="ghost">Sign In</Button>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">Get Started</Button>
+            <CtaButton className="bg-orange-500 hover:bg-orange-600 text-white">Get Started</CtaButton>
+            <ThemeToggle />
           </div>
         </div>
       </header>
@@ -54,8 +57,8 @@ function Page() {
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-primary-foreground" />
+                <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold">SuperAI</span>
               </div>

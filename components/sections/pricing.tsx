@@ -6,7 +6,7 @@ import { Badge } from "../ui/badge";
 
 function Pricing() {
   return (
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Choose Your Learning Plan</h2>
@@ -16,7 +16,7 @@ function Pricing() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <Card className="border-2 border-border hover:border-primary/50 transition-colors">
+                  <Card className="border-2 border-border hover:border-orange-500/50 transition-colors">
               <CardContent className="p-8">
                 <div className="text-center mb-8">
                   <h3 className="text-2xl font-bold mb-2">Free</h3>
@@ -29,15 +29,15 @@ function Pricing() {
 
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>5 AI tutoring sessions/month</span>
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Basic progress tracking</span>
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Community support</span>
                   </li>
                 </ul>
@@ -48,9 +48,9 @@ function Pricing() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-primary shadow-lg relative">
+                  <Card className="border-2 border-orange-500 shadow-lg relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-primary text-primary-foreground px-4 py-1">Most Popular</Badge>
+                          <Badge className="bg-orange-500 text-white px-4 py-1">Most Popular</Badge>
               </div>
               <CardContent className="p-8">
                 <div className="text-center mb-8">
@@ -64,30 +64,28 @@ function Pricing() {
 
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Unlimited AI tutoring</span>
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Advanced analytics</span>
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Priority support</span>
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Custom learning paths</span>
                   </li>
                 </ul>
 
-                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Start Pro Trial
-                </Button>
+                          <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">Start Pro Trial</Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-border hover:border-primary/50 transition-colors">
+                  <Card className="border-2 border-border hover:border-orange-500/50 transition-colors">
               <CardContent className="p-8">
                 <div className="text-center mb-8">
                   <h3 className="text-2xl font-bold mb-2">Enterprise</h3>
@@ -100,19 +98,19 @@ function Pricing() {
 
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Everything in Pro</span>
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Team management</span>
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Custom integrations</span>
                   </li>
                   <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-primary mr-3" />
+                                  <CheckCircle className="w-5 h-5 text-orange-500 mr-3" />
                     <span>Dedicated support</span>
                   </li>
                 </ul>

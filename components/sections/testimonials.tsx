@@ -58,11 +58,11 @@ function Testimonials() {
                 rating: 5,
               },
             ].map((testimonial, index) => (
-              <Card key={index} className="bg-white border-0 shadow-lg">
+                <Card key={index} className="bg-card border-0 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                        <Star key={i} className="w-4 h-4 fill-orange-500 text-orange-500" />
                     ))}
                   </div>
                   <p className="text-muted-foreground mb-4 text-pretty">"{testimonial.content}"</p>
