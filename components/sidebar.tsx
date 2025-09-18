@@ -43,13 +43,6 @@ export function Sidebar() {
     <div className="w-80 bg-background border-r border-border flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <h2 className="font-medium text-foreground">Chat History</h2>
-          <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-
         <div className="mt-3 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -90,10 +83,10 @@ export function Sidebar() {
       </div>
 
       {/* Recent Sessions */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-y-auto">
         <h3 className="font-medium text-sm mb-3 text-muted-foreground">Recent Sessions</h3>
         <div className="space-y-3">
-          {recentSessions.map((session, index) => (
+          {recentSessions.slice(0, 2).map((session, index) => (
             <Card key={index} className="p-3 hover:bg-muted/50 cursor-pointer">
               <div className="flex items-start gap-3">
                 <div className="flex-1 min-w-0">
@@ -109,16 +102,21 @@ export function Sidebar() {
             </Card>
           ))}
         </div>
+        {
+          recentSessions.length > 2 && (
+            <Button variant={"link"} className="p-0">more</Button>
+          )
+        }
       </div>
 
       {/* Upgrade Section */}
-      <div className="p-4 border-t border-border">
+      {/* <div className="p-4 border-t border-border">
         <Card className="p-4 bg-orange-500 text-white">
           <h3 className="font-semibold mb-2">Upgrade to Pro</h3>
           <p className="text-sm text-orange-100 mb-3">Unlock unlimited quizzes and advanced analytics</p>
           <Button className="w-full bg-white text-orange-500 hover:bg-orange-50">Learn More</Button>
         </Card>
-      </div>
+      </div> */}
     </div>
   )
 }

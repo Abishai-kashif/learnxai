@@ -1,8 +1,8 @@
 import { ThemeToggle } from "@/components/theme-toggle"
 import { FaBrain } from "react-icons/fa";
+import ProfileImage from "./profile-image";
 
-
-export function Header() {
+export function Header({ user }: IProps) {
   return (
     <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
       <div className="flex items-center gap-2">
@@ -13,17 +13,25 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
+        {user && 
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-            <span className="text-muted-foreground font-medium">SC</span>
-          </div>
+            <ProfileImage user={user} />
           <div>
-            <h3 className="font-semibold text-sm text-foreground">Sarah Chen</h3>
+              <h3 className="font-semibold text-sm text-foreground">{user.name}</h3>
             <p className="text-xs text-muted-foreground">Premium Member</p>
           </div>
         </div>
+        }
         <ThemeToggle />
       </div>
     </header>
   )
+}
+
+interface IProps {
+  user: {
+    name: string
+    email: string
+    id: string
+  } | null
 }

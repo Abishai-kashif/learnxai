@@ -56,15 +56,15 @@ function SignupForm({
 		const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
 		const URL = `${BASE_URL}/signup`;
 
-		const user = {
-			name: values.name,
-			email: values.email,
-			password: values.password
-		}
+		const { name, email, password } = values;
+		const user = { name, email, password }
 
 		try {
 			const response = await fetch(URL, {
 				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
 				body: JSON.stringify(user)
 			})
 
@@ -72,7 +72,11 @@ function SignupForm({
 				throw new Error("Network response was not ok");
 			}
 
-			redirect("/dashboard")
+			const data = await response.json()
+			const token = data?.access_token
+			console.log('token: ', data)
+			localStorage.setItem("token", token)
+			redirect("/chat")
 
 			// const data = await response.json();
 			// console.log(data);

@@ -12,6 +12,7 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Eye, EyeOff } from "lucide-react";
+import { redirect } from "next/navigation";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Enter a valid email"),
@@ -29,8 +30,33 @@ function LoginForm({ showPassword, setShowPassword }: IProps) {
     },
     });
 
-    const onLoginSubmit = (values: LoginValues) => {
-    console.log("Sign In submitted:", values);
+    const onLoginSubmit = async (values: LoginValues) => {
+        console.log("Sign In submitted:", values);
+        try {
+            const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
+            const URL = `${BASE_URL}/login`;
+
+            const formData = new FormData();
+            formData.append("username", values.email);
+            formData.append("password", values.password);
+
+            const response = await fetch(URL, {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+
+            const data = await response.json()
+            const token = data?.access_token
+
+            localStorage.setItem('token', token)
+            redirect('/chat')
+        } catch (error) {
+            console.log("Error signing in user: ", error);
+        }
     };
 
     return (
