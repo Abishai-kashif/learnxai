@@ -1,61 +1,27 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Download,
   MoreHorizontal,
   Plus,
   Send
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { parseJSON } from "@/lib/utils";
 import { FaRobot } from "react-icons/fa";
 import ChatMessage from "./chat-message";
 import { ScrollArea } from "./ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { ChatMessageProps, QuizMessageResponse, AssistantMessageProps, UserMessageProps, User, Session } from "@/types";
+import { PROMPT_SUGGESTIONS } from "@/contants";
 
-export function ChatArea({ user }: any) {
-  const [session, setSession] = useState([{
-    role: "assistant",
-    content: `👋 Hello ${user.name}!\nI'm your AI learning assistant. I'm here to help you learn any topic through personalized conversations and interactive quizzes.`,
-  }]);
+export function ChatArea({ user }: { user: User }) {
+  const [session, setSession] = useState<Session>([]);
   const [currentResponse, setCurrentResponse] = useState("")
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
-  // const abortControllerRef = useRef<AbortController | null>(null)
-  // const [input, setInput] = useState("");
+  const [input, setInput] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  // const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-  //   const _input = e.target.value;
-  //   setInput(_input);
-
-  //   if (_input === "") {
-  //     return;
-  //   }
-
-  //   setSession([
-  //     ...session,
-  //     {
-  //       role: "user",
-  //       content: _input
-  //     }
-  //   ]);
-
-  // }
-
-  const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
-      console.log('scroll container: ', scrollContainer)
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
-      }
-    }
-  }
-
-  useEffect(() => {
-    console.log('use effect triggered')
-    scrollToBottom()
-  }, [session, currentResponse])
-
-  const chat = async (session: Array<{ role: string; content: string }>) => {
+  const chat = async (session: ChatMessageProps[]) => {
     try {
       const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
       const URL = `${BASE_URL}/chat`;
@@ -102,26 +68,35 @@ export function ChatArea({ user }: any) {
 
       // Add the complete assistant response
       if (accumulatedResponse) {
-        try {
-          accumulatedResponse = JSON.parse(accumulatedResponse)
+        console.log('\n\naccumulatedResponse:>>>  ', accumulatedResponse, '\n')
+        const quizzes = parseJSON<QuizMessageResponse | null>(accumulatedResponse)
+        console.log('\n\nquizData:>>>  ', quizzes, '\n')
 
-          const assistantMessage = {
-            role: "assistant",
-            content: accumulatedResponse,
+        let assistantMessage: ChatMessageProps;
+
+        if (quizzes) {
+          const title = `Here is your well crafted quiz ${user?.name || ''}`
+          const estimatedTime = '2'
+          const currentQuestionIndex = 0
+
+          const quizData = {
+            title,
+            estimatedTime,
+            currentQuestionIndex,
+            questions: quizzes
           }
 
-          setSession((prev) => [...prev, assistantMessage])
-        } catch (_) {
-          console.log("Failed to parse assistant response")
-
-          const assistantMessage = {
+          assistantMessage = {
             role: "quiz",
-            content: accumulatedResponse,
+            content: quizData
           }
-          console.log('\n\nassistantMessage\n\n', assistantMessage, '\n\n')
-
-          setSession((prev) => [...prev, assistantMessage])
+        } else {
+          assistantMessage = {
+            role: "assistant",
+            content: accumulatedResponse
+          }
         }
+        setSession((prev) => [...prev, assistantMessage])
       }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
@@ -130,11 +105,11 @@ export function ChatArea({ user }: any) {
       }
 
       console.error("Chat error:", error)
-      const errorMessage = {
-        id: `error-${Date.now()}`,
+      const errorMessage: AssistantMessageProps = {
+      // id: `error-${Date.now()}`,
         role: "assistant",
         content: "Sorry, I encountered an error. Please try again.",
-        timestamp: new Date(),
+        // timestamp: new Date(),
       }
       setSession((prev) => [...prev, errorMessage])
     } finally {
@@ -144,23 +119,47 @@ export function ChatArea({ user }: any) {
     }
   }
 
-  const handleKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const submitMessage = async () => {
+    const prompt = input.trim()
+    if (!prompt || loading) return
+
+    console.log('user: ', prompt)
+
+
+    const userMessage: UserMessageProps = {
+      role: "user",
+      content: prompt
+    }
+
+    const isNewSession = session.length < 2
+
+    const _session = [
+      ...session,
+      userMessage
+    ]
+
+    // if (isNewSession) {
+    //   createSession(_session).then((id) => { //  j
+    //     if (!id) console.error("Failed to create Session")
+    //   })
+    // }
+
+    setSession(_session)
+    setInput("")
+    try {
+      setLoading(true)
+      await chat(_session)
+    } catch (e) {
+      console.error("Error: ", e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleKeyDown = async (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
-      const prompt = (event.target as any)?.value ?? '';
-
-      if (prompt) {
-        console.log('user: ', prompt)
-        const _session = [
-          ...session,
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
-
-        setSession(_session)
-        await chat(_session)
-      }
+      event.preventDefault()
+      await submitMessage()
     }
   }
 
@@ -193,77 +192,67 @@ export function ChatArea({ user }: any) {
       </div>
 
       {/* Chat Messages */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-4">
+      <ScrollArea className="flex-1 px-4 py-4 overflow-y-auto">
         <div className="space-y-5">
           {
-            session.map((message, index) => (
-              <ChatMessage
-                key={index}
-                variant={message.role as any}
-                message={message.content}
-                user={user}
-              />
-            ))
+            session.length === 0 ? (
+              <div className="h-[60vh] flex flex-col items-center justify-center text-center text-muted-foreground gap-4">
+                <div className="w-14 h-14 rounded-full bg-orange-500/10 text-orange-600 flex-center">
+                  <FaRobot />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Start a new conversation</h3>
+                  <p className="text-sm">Ask anything about learning topics, generate quizzes, or get explanations.</p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                  <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.EXPLAIN_RECURSION)}>Try: Explain recursion</Button>
+                  <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.CREATE_JS_QUIZ)}>Create a JS quiz</Button>
+                  <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.SUMMARIZE_GRADIENT_DESCENT)}>Summarize a concept</Button>
+                </div>
+              </div>
+            ) : (
+              session.map((message, index) => {
+                return <ChatMessage
+                  key={index}
+                  {...message}
+                  {...(message.role == "user" ? { user } : {})}
+                />
+              })
+              )
           }
 
           {
             currentResponse && (
               <ChatMessage
-                variant="assistant"
-                message={currentResponse}
-                user={user}
+                role="assistant"
+                content={currentResponse}
+                // user={user}
               />
             )
           }
         </div>
       </ScrollArea>
-      {/* <ChatMessage
-          variant="user"
-          message="I want to learn about machine learning algorithms. Can you help me understand the different types?"
-          user={user}
-        />
-
-        <ChatMessage
-          variant="assistant"
-          message="👋 Hello! I'm your AI learning assistant. I'm here to help you learn any topic through personalized conversations and interactive quizzes."
-        />
-
-        <ChatMessage
-          variant="quiz"
-          introText="Perfect! I've generated a personalized quiz based on our conversation about machine learning algorithms."
-          quizData={{
-            title: "Machine Learning Algorithms Quiz",
-            estimatedTime: "3 minutes",
-            currentQuestion: 1,
-            totalQuestions: 5,
-            question: "Which type of machine learning algorithm learns from labeled training data to make predictions?",
-            options: [
-              "Unsupervised Learning",
-              "Supervised Learning",
-              "Reinforcement Learning",
-              "Semi-supervised Learning"
-            ]
-          }}
-        /> */}
       <div />  
 
-      {/* Input Area */}
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3">
           <Button size="sm" variant="ghost">
             <span className="text-lg"><Plus /></span>
           </Button>
           <div className="flex-1 relative">
-            <input
-              // value={input}
+            <textarea
+              value={input}
               onKeyDown={handleKeyDown}
-              // onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me anything or continue our conversation..."
-              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12 bg-background text-foreground"
+              rows={1}
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12 bg-background text-foreground resize-none"
             />
             <Button
               size="sm"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-orange-500 hover:bg-orange-600"
+              onClick={submitMessage}
+              disabled={loading || input.trim().length === 0}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="h-4 w-4" />
             </Button>

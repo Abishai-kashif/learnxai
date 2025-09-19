@@ -1,41 +1,29 @@
-"use client"
-
 import { Header } from "@/components/header"
 import { Sidebar } from "@/components/sidebar"
 import { ChatArea } from "@/components/chat-area"
 import { AnalyticsPanel } from "@/components/analytics-panel"
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
+// import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { fetchCurrentSession, fetchSessions, fetchUser } from "@/db"
 
-export default async function Chat() {
-  const [user, setUser] = useState<null | { name: string, email: string, id: string }>({
-    name: "Abishai",
-    email: "abishaikashif975@gmail.com",
-    id: "1"
-  })
+export default async function Chat({
+  params,
+}: {
+  params: Promise<{ ids: Array<string> }>
+}) {
+  const { ids } = await params
+  console.log('ids>>>> ', ids)
 
-  useEffect(() => {
-    async function fetchUser() {
-      const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
-      const URL = `${BASE_URL}/me`;
-      const token = localStorage.getItem('token')
+  if (ids?.length > 1) {
+    throw Error("One session at a time.")
+  }
 
-      const response = await fetch(URL, {
-        method: 'GET',
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      })
+  // const id = ids?.[0]
 
-      if (response.ok) {
-        const user = await response.json()
-        setUser(user)
-      }
-    }
-
-    // fetchUser()
-  }, []);
+  const user = await fetchUser()
+  console.log(user)
+  // const sessions = await fetchSessions(user?.id)
 
   return (
     <div className="flex flex-col h-screen bg-orange-50 min-w-5xl">
