@@ -131,9 +131,9 @@ export function ChatArea({ user }: { user: User }) {
       content: prompt
     }
 
-    const isNewSession = session.length < 2
+    // const isNewSession = session.length < 2
 
-    const _session = [
+    let _session = [
       ...session,
       userMessage
     ]
@@ -148,7 +148,22 @@ export function ChatArea({ user }: { user: User }) {
     setInput("")
     try {
       setLoading(true)
-      await chat(_session)
+
+      // cleaning sessions for LLM
+      const cleanedSessions = _session.map(sn => {
+        if (sn.role == "quiz") {
+          const content = JSON.stringify(sn.content)
+          return {
+            role: "assistant" as const,
+            content
+          }
+        }
+
+        return sn
+      })
+
+      console.log('\ncleanedSessions >>> ', cleanedSessions, '\n')
+      await chat(cleanedSessions)
     } catch (e) {
       console.error("Error: ", e)
     } finally {
@@ -192,7 +207,7 @@ export function ChatArea({ user }: { user: User }) {
       </div>
 
       {/* Chat Messages */}
-      <ScrollArea className="flex-1 px-4 py-4 overflow-y-auto">
+      <ScrollArea className="flex-1 px-4 py-4">
         <div className="space-y-5">
           {
             session.length === 0 ? (
@@ -244,9 +259,9 @@ export function ChatArea({ user }: { user: User }) {
               value={input}
               onKeyDown={handleKeyDown}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything or continue our conversation..."
+              placeholder="Ask me anything..."
               rows={1}
-              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12 bg-background text-foreground resize-none"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12 bg-background text-foreground resize-none overflow-y-hidden"
             />
             <Button
               size="sm"

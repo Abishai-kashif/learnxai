@@ -6,6 +6,7 @@ import { FaBookmark, FaCalendar } from "react-icons/fa";
 import { GiProgression } from "react-icons/gi";
 import { IoIosChatbubbles } from "react-icons/io";
 import { MdBatteryUnknown } from "react-icons/md";
+import { ScrollArea } from "./ui/scroll-area";
 
 export function Sidebar() {
   const recentSessions = [
@@ -83,25 +84,27 @@ export function Sidebar() {
       </div>
 
       {/* Recent Sessions */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1">
         <h3 className="font-medium text-sm mb-3 text-muted-foreground">Recent Sessions</h3>
-        <div className="space-y-3">
-          {recentSessions.slice(0, 2).map((session, index) => (
-            <Card key={index} className="p-3 hover:bg-muted/50 cursor-pointer">
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-foreground mb-1">{session.title}</h4>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{session.subtitle}</p>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{session.time}</span>
+        <ScrollArea className="p-4 border border-red-500">
+          <div className="space-y-3 border border-blue-500">
+            {recentSessions.slice(0, 3).map((session, index) => (
+              <Card key={index} className="p-3 hover:bg-muted/50 cursor-pointer">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm text-foreground mb-1">{session.title}</h4>
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{session.subtitle}</p>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{session.time}</span>
+                    </div>
                   </div>
+                  <Badge className={`text-xs ${session.statusColor} border-0`}>{session.status}</Badge>
                 </div>
-                <Badge className={`text-xs ${session.statusColor} border-0`}>{session.status}</Badge>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
         {
           recentSessions.length > 2 && (
             <Button variant={"link"} className="p-0">more</Button>

@@ -5,7 +5,7 @@ import { AnalyticsPanel } from "@/components/analytics-panel"
 import Link from "next/link"
 // import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { fetchCurrentSession, fetchSessions, fetchUser } from "@/db"
+import { fetchUser } from "@/db"
 
 export default async function Chat({
   params,
@@ -13,17 +13,14 @@ export default async function Chat({
   params: Promise<{ ids: Array<string> }>
 }) {
   const { ids } = await params
-  console.log('ids>>>> ', ids)
 
-  if (ids?.length > 1) {
-    throw Error("One session at a time.")
-  }
+  // if (ids?.length > 1) {
+  //   throw Error("One session at a time.")
+  // }
 
-  // const id = ids?.[0]
 
   const user = await fetchUser()
   console.log(user)
-  // const sessions = await fetchSessions(user?.id)
 
   return (
     <div className="flex flex-col h-screen bg-orange-50 min-w-5xl">

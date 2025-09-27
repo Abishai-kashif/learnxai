@@ -47,8 +47,8 @@ const ChatMessage = (props: ChatMessageProps) => {
   }
 
   // Quiz content role
-  if (props.role === "quiz") {
-    const { content } = props as QuizMessageProps
+  if (props.role === "quiz" && !(typeof props.content == "string")) {
+    const { content } = props
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [quizCompleted, setQuizCompleted] = useState(false)
     const [quizResults, setQuizResults] = useState<{
