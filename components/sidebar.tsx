@@ -3,10 +3,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { QuizManagementDashboard } from './quiz/quiz-management-dashboard';
-import { Clock, Plus, Search, BookOpen, BarChart3, Target, Settings, Edit, Trash2, Play, Users, TrendingUp, MessageSquare, Calendar, Bookmark, Monitor, Smartphone, Globe } from "lucide-react";
+import { Clock, Plus, Search, BookOpen, BarChart3, Target, Settings, Edit, Trash2, Play, Monitor, Smartphone, Globe } from "lucide-react";
 import { FaBookmark, FaCalendar } from "react-icons/fa";
 import { GiProgression } from "react-icons/gi";
 import { IoIosChatbubbles } from "react-icons/io";
@@ -14,6 +12,7 @@ import { MdBatteryUnknown } from "react-icons/md";
 import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
 
 export function Sidebar() {
   const { user, isAuthenticated } = useAuth();
@@ -169,15 +168,14 @@ export function Sidebar() {
         
         {/* Quiz Management Section */}
         <div className="space-y-1">
-          <Button
+          <Link href="/dashboard"><Button
             variant="ghost"
             className="w-full justify-start gap-3 h-10"
-            onClick={() => setShowQuizDashboard(!showQuizDashboard)}
           >
             <BarChart3 className="h-4 w-4" />
             Quiz Dashboard
           </Button>
-          
+          </Link>
           <Button 
             variant="ghost" 
             className="w-full justify-start gap-3 h-10"

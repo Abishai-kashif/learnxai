@@ -168,7 +168,7 @@ const ChatMessage = (props: ChatMessageProps) => {
           questions: content.questions || [],
           currentQuestionIndex: 0
         })
-        
+        console.log('Save quiz result:', result)
         if (result.success) {
           setQuizSaved(true)
           console.log('Quiz saved successfully with ID:', result.quiz_id)
@@ -184,6 +184,8 @@ const ChatMessage = (props: ChatMessageProps) => {
         setIsSaving(false)
       }
     }
+
+    console.log('QuizMessage render:', { quizCompleted, quizResults, currentQuestionIndex, selectedAnswers })
 
     const startQuizAttempt = async (quizId: string) => {
       try {
