@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Search, BarChart3, Trash2, Clock, MessageSquare } from "lucide-react";
+import { Search, BarChart3, Trash2, Clock, MessageSquare, RefreshCw } from "lucide-react";
 import { GiProgression } from "react-icons/gi";
 import { IoIosChatbubbles } from "react-icons/io";
 import Link from "next/link";
@@ -19,11 +19,27 @@ export function Sidebar({
 }) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Load sessions from localStorage
+  // Load sessions from localStorage on component mount and when sessions change
   useEffect(() => {
     loadSessions();
   }, []);
+
+  // Add event listener for storage changes (when other tabs update sessions)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      loadSessions();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Refresh sessions when currentSessionId changes (new session created)
+  useEffect(() => {
+    loadSessions();
+  }, [currentSessionId]);
 
   const loadSessions = () => {
     try {
@@ -34,13 +50,26 @@ export function Sidebar({
           createdAt: new Date(s.createdAt),
           updatedAt: new Date(s.updatedAt)
         }));
-        setSessions(sessionData.sort((a, b) => 
+        
+        // Sort by updatedAt descending (newest first)
+        const sortedSessions = sessionData.sort((a, b) => 
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        ));
+        );
+        
+        setSessions(sortedSessions);
+      } else {
+        setSessions([]);
       }
     } catch (error) {
       console.error('Error loading sessions:', error);
+      setSessions([]);
     }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadSessions();
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   const filteredSessions = sessions.filter(session =>
@@ -60,16 +89,17 @@ export function Sidebar({
     event.stopPropagation();
     
     try {
-      const updatedSessions = sessions.filter(s => s.id !== sessionId);
-      setSessions(updatedSessions);
-      
-      // Update localStorage
+      // Remove from localStorage
       const stored = localStorage.getItem('chat-sessions');
       if (stored) {
         const allSessions = JSON.parse(stored);
         const filtered = allSessions.filter((s: any) => s.id !== sessionId);
         localStorage.setItem('chat-sessions', JSON.stringify(filtered));
       }
+      
+      // Update local state
+      const updatedSessions = sessions.filter(s => s.id !== sessionId);
+      setSessions(updatedSessions);
       
       // If deleted session was current, switch to new chat
       if (currentSessionId === sessionId) {
@@ -86,10 +116,7 @@ export function Sidebar({
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) {
-      return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
+      return 'Today';
     } else if (diffDays === 1) {
       return 'Yesterday';
     } else if (diffDays < 7) {
@@ -102,11 +129,31 @@ export function Sidebar({
     }
   };
 
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
   return (
     <div className="w-80 bg-background border-r border-border flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-border">
-        <div className="mt-3 relative">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-foreground">Chat Sessions</h2>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="h-8 w-8"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             value={searchTerm}
@@ -148,7 +195,7 @@ export function Sidebar({
         <div className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-foreground">Recent Chats</h3>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
               {sessions.length} {sessions.length === 1 ? 'chat' : 'chats'}
             </span>
           </div>
@@ -169,10 +216,10 @@ export function Sidebar({
                 <div
                   key={session.id}
                   onClick={() => handleSelectSession(session.id)}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                  className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border group ${
                     currentSessionId === session.id
-                      ? 'bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800'
-                      : 'border-transparent hover:bg-muted/50'
+                      ? 'bg-orange-50 border-orange-200 dark:bg-orange-950 dark:border-orange-800 shadow-sm'
+                      : 'border-transparent hover:bg-muted/50 hover:border-muted'
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -187,17 +234,20 @@ export function Sidebar({
                         {session.preview}
                       </p>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           <Clock className="h-3 w-3" />
-                          {formatDate(session.updatedAt)}
+                          <span>{formatDate(session.updatedAt)}</span>
+                          <span className="text-xs">• {formatTime(session.updatedAt)}</span>
                         </div>
-                        <span>{session.messageCount} messages</span>
+                        <span className="bg-muted px-1.5 py-0.5 rounded text-xs">
+                          {session.messageCount} {session.messageCount === 1 ? 'msg' : 'msgs'}
+                        </span>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-2"
                       onClick={(e) => handleDeleteSession(session.id, e)}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -207,6 +257,13 @@ export function Sidebar({
               ))}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-border">
+        <div className="text-xs text-muted-foreground text-center">
+          Chats are stored locally in your browser
         </div>
       </div>
     </div>

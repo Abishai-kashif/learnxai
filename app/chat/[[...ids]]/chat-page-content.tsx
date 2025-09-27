@@ -30,6 +30,8 @@ export default function ChatPageContent({ ids }: ChatPageContentProps) {
             const sessionExists = sessionData.find((s: any) => s.id === lastSessionId);
             if (sessionExists) {
               setCurrentSessionId(lastSessionId);
+            } else {
+              localStorage.removeItem('last-active-session');
             }
           }
         }
