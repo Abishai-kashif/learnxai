@@ -47,7 +47,7 @@ export function AnalyticsPanel() {
         </Card>
 
         {/* Recommended Next Steps */}
-        <Card className="p-4 mb-4">
+        {/* <Card className="p-4 mb-4">
           <h3 className="font-semibold mb-3 text-foreground">Recommended Next Steps</h3>
           <div className="space-y-2">
             <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
@@ -63,7 +63,7 @@ export function AnalyticsPanel() {
               <span className="text-sm text-foreground">Neural Networks Basics</span>
             </div>
           </div>
-        </Card>
+        </Card> */}
 
         {/* Recent Quiz Results */}
         <Card className="p-4 mb-4">
@@ -116,7 +116,7 @@ export function AnalyticsPanel() {
           <div className="text-center">
             <div className="text-3xl font-bold text-orange-500 mb-2">7</div>
             <div className="text-sm text-muted-foreground mb-3">Days in a row!</div>
-            <div className="flex justify-center gap-1 mb-3">
+            {/* <div className="flex justify-center gap-1 mb-3">
               {[1, 2, 3, 4, 5].map((day, index) => (
                 <div
                   key={index}
@@ -124,16 +124,16 @@ export function AnalyticsPanel() {
                     index < 3 ? "bg-orange-500 text-white" : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {index < 3 ? "🔥" : "○"}
+                  {index < 3 ? "" : "○"}
                 </div>
               ))}
-            </div>
-            <p className="text-xs text-muted-foreground">Keep it up 3 more days to reach your weekly goal!</p>
+            </div> */}
+            {/* <p className="text-xs text-muted-foreground">Keep it up 3 more days to reach your weekly goal!</p> */}
           </div>
         </Card>
 
         {/* Recent Achievements */}
-        <Card className="p-4">
+        {/* <Card className="p-4">
           <h3 className="font-semibold mb-3 text-foreground">Recent Achievements</h3>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export function AnalyticsPanel() {
               </div>
             </div>
           </div>
-        </Card>
+        </Card> */}
       </div>
     </div>
   )
