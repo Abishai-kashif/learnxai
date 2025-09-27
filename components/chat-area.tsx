@@ -143,7 +143,7 @@ export function ChatArea({ user }: { user: User }) {
 
     const isNewSession = session.length < 2
 
-    const _session = [
+    let _session = [
       ...session,
       userMessage
     ]
@@ -155,6 +155,15 @@ export function ChatArea({ user }: { user: User }) {
     // }
 
     setSession(_session)
+    _session = _session.map(item => {
+      if (item.role == "quiz") {
+        return {
+          role: "assistant",
+          content: JSON.stringify(item.content)
+        }
+      }
+      return item
+    })
     setInput("")
     try {
       setLoading(true)
