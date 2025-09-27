@@ -12,15 +12,140 @@ import { FaRobot } from "react-icons/fa";
 import ChatMessage from "./chat-message";
 import { ScrollArea } from "./ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ChatMessageProps, QuizMessageResponse, AssistantMessageProps, UserMessageProps, User, Session } from "@/types";
+import { ChatMessageProps, QuizMessageResponse, AssistantMessageProps, UserMessageProps, User, Session, StoredSession } from "@/types";
 import { PROMPT_SUGGESTIONS } from "@/contants";
 
-export function ChatArea({ user }: { user: User }) {
+interface ChatAreaProps {
+  user: User;
+  currentSessionId: string | null;
+  onSessionChange: (sessionId: string | null) => void;
+  onNewChat: () => void;
+}
+
+export function ChatArea({ user, currentSessionId, onSessionChange, onNewChat }: ChatAreaProps) {
+  const [sessions, setSessions] = useState<StoredSession[]>([]);
   const [session, setSession] = useState<Session>([]);
   const [currentResponse, setCurrentResponse] = useState("")
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  // Load sessions from localStorage on component mount
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  // Load session when currentSessionId changes
+  useEffect(() => {
+    if (currentSessionId) {
+      loadSession(currentSessionId);
+    } else {
+      setSession([]);
+    }
+  }, [currentSessionId]);
+
+  const loadSessions = () => {
+    try {
+      const stored = localStorage.getItem('chat-sessions');
+      if (stored) {
+        const sessionData: StoredSession[] = JSON.parse(stored);
+        setSessions(sessionData);
+      }
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    }
+  };
+
+  const loadSession = (sessionId: string) => {
+    try {
+      const stored = localStorage.getItem('chat-sessions');
+      if (stored) {
+        const sessionData: StoredSession[] = JSON.parse(stored);
+        const session = sessionData.find(s => s.id === sessionId);
+        if (session) {
+          setSession(session.messages);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading session:', error);
+    }
+  };
+
+  const saveSession = (messages: Session, sessionId?: string): string => {
+    try {
+      // Convert null to undefined for sessionId parameter
+      const id = sessionId || generateSessionId();
+      const title = generateSessionTitle(messages);
+      const preview = generateSessionPreview(messages);
+      const now = new Date().toISOString();
+      
+      const sessionData: StoredSession = {
+        id,
+        title,
+        preview,
+        createdAt: sessionId ? getSessionCreationTime(sessionId) : now,
+        updatedAt: now,
+        messageCount: messages.length,
+        messages
+      };
+
+      const existingSessions = localStorage.getItem('chat-sessions');
+      let sessions: StoredSession[] = existingSessions ? JSON.parse(existingSessions) : [];
+      
+      // Remove existing session if updating
+      sessions = sessions.filter(s => s.id !== id);
+      // Add updated session to beginning
+      sessions.unshift(sessionData);
+      
+      // Keep only last 50 sessions to prevent localStorage overflow
+      if (sessions.length > 50) {
+        sessions = sessions.slice(0, 50);
+      }
+      
+      localStorage.setItem('chat-sessions', JSON.stringify(sessions));
+      setSessions(sessions);
+      
+      return id;
+    } catch (error) {
+      console.error('Error saving session:', error);
+      return generateSessionId(); // Fallback ID
+    }
+  };
+
+  const generateSessionId = (): string => {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  };
+
+  const generateSessionTitle = (messages: Session): string => {
+    const userMessage = messages.find(msg => msg.role === 'user');
+    if (userMessage) {
+      const content = (userMessage as UserMessageProps).content;
+      return content.length > 30 ? content.substring(0, 30) + '...' : content;
+    }
+    return 'New Chat';
+  };
+
+  const generateSessionPreview = (messages: Session): string => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage) {
+      let content = '';
+      if (lastMessage.role === 'user') {
+        content = (lastMessage as UserMessageProps).content;
+      } else if (lastMessage.role === 'assistant') {
+        content = (lastMessage as AssistantMessageProps).content;
+      } else if (lastMessage.role === 'quiz') {
+        content = 'Quiz generated';
+      }
+      
+      return content.length > 50 ? content.substring(0, 50) + '...' : content;
+    }
+    return 'Start a conversation...';
+  };
+
+  const getSessionCreationTime = (sessionId: string): string => {
+    const existingSession = sessions.find(s => s.id === sessionId);
+    return existingSession ? existingSession.createdAt : new Date().toISOString();
+  };
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -106,7 +231,19 @@ export function ChatArea({ user }: { user: User }) {
             content: accumulatedResponse
           }
         }
-        setSession((prev) => [...prev, assistantMessage])
+        
+        const updatedSession = [...session, assistantMessage];
+        setSession(updatedSession);
+        
+        // Save session after assistant response
+        // Convert null to undefined when passing currentSessionId
+        const sessionId = saveSession(updatedSession, currentSessionId || undefined);
+        if (sessionId && !currentSessionId) {
+          // Notify parent component about new session
+          onSessionChange(sessionId);
+          // Save as last active session
+          localStorage.setItem('last-active-session', sessionId);
+        }
       }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
@@ -116,16 +253,16 @@ export function ChatArea({ user }: { user: User }) {
 
       console.error("Chat error:", error)
       const errorMessage: AssistantMessageProps = {
-      // id: `error-${Date.now()}`,
         role: "assistant",
         content: "Sorry, I encountered an error. Please try again.",
-        // timestamp: new Date(),
       }
-      setSession((prev) => [...prev, errorMessage])
+      
+      const updatedSession = [...session, errorMessage];
+      setSession(updatedSession);
+      // Convert null to undefined when passing currentSessionId
+      saveSession(updatedSession, currentSessionId || undefined);
     } finally {
-      // setIsLoading(false)
       setCurrentResponse("")
-      // abortControllerRef.current = null
     }
   }
 
@@ -135,45 +272,53 @@ export function ChatArea({ user }: { user: User }) {
 
     console.log('user: ', prompt)
 
-
     const userMessage: UserMessageProps = {
       role: "user",
       content: prompt
     }
 
-    const isNewSession = session.length < 2
+    const updatedSession = [...session, userMessage];
+    setSession(updatedSession);
 
-    let _session = [
-      ...session,
-      userMessage
-    ]
+    // Save session after user message and get session ID
+    // Convert null to undefined when passing currentSessionId
+    const sessionId = saveSession(updatedSession, currentSessionId || undefined);
+    
+    // If this is a new session (no currentSessionId), notify parent
+    if (sessionId && !currentSessionId) {
+      onSessionChange(sessionId);
+      // Save as last active session
+      localStorage.setItem('last-active-session', sessionId);
+    }
 
-    // if (isNewSession) {
-    //   createSession(_session).then((id) => { //  j
-    //     if (!id) console.error("Failed to create Session")
-    //   })
-    // }
-
-    setSession(_session)
-    _session = _session.map(item => {
-      if (item.role == "quiz") {
+    setInput("")
+    
+    // Prepare session for API call
+    const apiSession: ChatMessageProps[] = updatedSession.map(item => {
+      if (item.role === "quiz") {
         return {
           role: "assistant",
           content: JSON.stringify(item.content)
-        }
+        } as ChatMessageProps;
       }
-      return item
-    })
-    setInput("")
+      return item as ChatMessageProps;
+    });
+
     try {
       setLoading(true)
-      await chat(_session)
+      await chat(apiSession)
     } catch (e) {
       console.error("Error: ", e)
     } finally {
       setLoading(false)
     }
   }
+
+  const handleNewChatClick = () => {
+    setInput("");
+    setCurrentResponse("");
+    onNewChat(); // Notify parent to reset session
+  };
 
   const handleKeyDown = async (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -219,20 +364,24 @@ export function ChatArea({ user }: { user: User }) {
       <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-4 overflow-y-auto">
         <div className="space-y-5">
           {
-            session.length === 0 ? (
+            session.length === 0 && !currentResponse ? (
               <div className="h-[60vh] flex flex-col items-center justify-center text-center text-muted-foreground gap-4">
                 <div className="w-14 h-14 rounded-full bg-orange-500/10 text-orange-600 flex-center">
                   <FaRobot />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Start a new conversation</h3>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {currentSessionId ? 'Continue conversation' : 'Start a new conversation'}
+                  </h3>
                   <p className="text-sm">Ask anything about learning topics, generate quizzes, or get explanations.</p>
                 </div>
-                <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
-                  <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.EXPLAIN_RECURSION)}>Try: Explain recursion</Button>
-                  <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.CREATE_JS_QUIZ)}>Create a JS quiz</Button>
-                  <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.SUMMARIZE_GRADIENT_DESCENT)}>Summarize a concept</Button>
-                </div>
+                {!currentSessionId && (
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                    <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.EXPLAIN_RECURSION)}>Try: Explain recursion</Button>
+                    <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.CREATE_JS_QUIZ)}>Create a JS quiz</Button>
+                    <Button size="sm" variant="outline" onClick={() => setInput(PROMPT_SUGGESTIONS.SUMMARIZE_GRADIENT_DESCENT)}>Summarize a concept</Button>
+                  </div>
+                )}
               </div>
             ) : (
               session.map((message, index) => {
@@ -242,7 +391,7 @@ export function ChatArea({ user }: { user: User }) {
                   {...(message.role == "user" ? { user } : {})}
                 />
               })
-              )
+            )
           }
 
           {
@@ -250,17 +399,20 @@ export function ChatArea({ user }: { user: User }) {
               <ChatMessage
                 role="assistant"
                 content={currentResponse}
-                // user={user}
               />
             )
           }
         </div>
       </ScrollArea>
-      <div />  
 
       <div className="p-4 border-t border-border">
         <div className="flex items-start gap-3">
-          <Button size="sm" variant="ghost" className="mt-2">
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="mt-2"
+            onClick={handleNewChatClick}
+          >
             <span className="text-lg"><Plus /></span>
           </Button>
           <div className="flex-1 relative">

@@ -36,6 +36,25 @@ export interface QuizMessageProps {
 	content: QuizData;
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+  messageCount: number;
+  preview: string;
+}
+
+export interface StoredSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  preview: string;
+  messages: ChatMessageProps[];
+}
+
 
 // Union type for all message variants
 export type ChatMessageProps = UserMessageProps | AssistantMessageProps | QuizMessageProps
