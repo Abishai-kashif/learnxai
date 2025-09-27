@@ -71,46 +71,48 @@ export function ChatArea({ user, currentSessionId, onSessionChange, onNewChat }:
     }
   };
 
-  const saveSession = (messages: Session, sessionId?: string): string => {
-    try {
-      // Convert null to undefined for sessionId parameter
-      const id = sessionId || generateSessionId();
-      const title = generateSessionTitle(messages);
-      const preview = generateSessionPreview(messages);
-      const now = new Date().toISOString();
-      
-      const sessionData: StoredSession = {
-        id,
-        title,
-        preview,
-        createdAt: sessionId ? getSessionCreationTime(sessionId) : now,
-        updatedAt: now,
-        messageCount: messages.length,
-        messages
-      };
+const saveSession = (messages: Session, sessionId?: string): string => {
+  try {
+    const id = sessionId || generateSessionId();
+    const title = generateSessionTitle(messages);
+    const preview = generateSessionPreview(messages);
+    const now = new Date().toISOString();
+    
+    const sessionData: StoredSession = {
+      id,
+      title,
+      preview,
+      createdAt: sessionId ? getSessionCreationTime(sessionId) : now,
+      updatedAt: now,
+      messageCount: messages.length,
+      messages
+    };
 
-      const existingSessions = localStorage.getItem('chat-sessions');
-      let sessions: StoredSession[] = existingSessions ? JSON.parse(existingSessions) : [];
-      
-      // Remove existing session if updating
-      sessions = sessions.filter(s => s.id !== id);
-      // Add updated session to beginning
-      sessions.unshift(sessionData);
-      
-      // Keep only last 50 sessions to prevent localStorage overflow
-      if (sessions.length > 50) {
-        sessions = sessions.slice(0, 50);
-      }
-      
-      localStorage.setItem('chat-sessions', JSON.stringify(sessions));
-      setSessions(sessions);
-      
-      return id;
-    } catch (error) {
-      console.error('Error saving session:', error);
-      return generateSessionId(); // Fallback ID
+    const existingSessions = localStorage.getItem('chat-sessions');
+    let sessions: StoredSession[] = existingSessions ? JSON.parse(existingSessions) : [];
+    
+    // Remove existing session if updating
+    sessions = sessions.filter(s => s.id !== id);
+    // Add updated session to beginning
+    sessions.unshift(sessionData);
+    
+    // Keep only last 50 sessions to prevent localStorage overflow
+    if (sessions.length > 50) {
+      sessions = sessions.slice(0, 50);
     }
-  };
+    
+    localStorage.setItem('chat-sessions', JSON.stringify(sessions));
+    setSessions(sessions);
+    
+    // Trigger storage event to notify other components (like sidebar)
+    window.dispatchEvent(new Event('storage'));
+    
+    return id;
+  } catch (error) {
+    console.error('Error saving session:', error);
+    return generateSessionId();
+  }
+};
 
   const generateSessionId = (): string => {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
