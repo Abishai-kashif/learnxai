@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -14,38 +14,14 @@ export default function ProtectedRoute({
   children, 
   redirectTo = '/auth' 
 }: ProtectedRouteProps) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authenticated = AuthService.isAuthenticated();
-        
-        if (!authenticated) {
-          router.push(redirectTo);
-          return;
-        }
-
-        // Optionally verify with server
-        const user = await AuthService.getCurrentUser();
-        if (!user) {
-          router.push(redirectTo);
-          return;
-        }
-
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Authentication check failed:', error);
-        router.push(redirectTo);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [router, redirectTo]);
+    if (!isLoading && !user) {
+      router.push(redirectTo);
+    }
+  }, [user, isLoading, router, redirectTo]);
 
   if (isLoading) {
     return (
@@ -58,7 +34,7 @@ export default function ProtectedRoute({
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null; // Router will handle redirect
   }
 

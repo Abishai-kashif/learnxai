@@ -5,18 +5,108 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Clock, Plus, Search, BookOpen, BarChart3, Target, Settings, Edit, Trash2, Play, Users, TrendingUp, MessageSquare, Calendar, Bookmark } from "lucide-react";
+import { QuizManagementDashboard } from './quiz/quiz-management-dashboard';
+import { Clock, Plus, Search, BookOpen, BarChart3, Target, Settings, Edit, Trash2, Play, Users, TrendingUp, MessageSquare, Calendar, Bookmark, Monitor, Smartphone, Globe } from "lucide-react";
 import { FaBookmark, FaCalendar } from "react-icons/fa";
 import { GiProgression } from "react-icons/gi";
 import { IoIosChatbubbles } from "react-icons/io";
 import { MdBatteryUnknown } from "react-icons/md";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { apiClient } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Sidebar() {
-  const router = useRouter()
+  const { user, isAuthenticated } = useAuth();
   const [activeQuizSection, setActiveQuizSection] = useState('create')
   const [showQuizManagement, setShowQuizManagement] = useState(false)
+  const [showQuizDashboard, setShowQuizDashboard] = useState(false);
+  
+  // Session history state
+  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [sessionStats, setSessionStats] = useState<any>(null);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [sessionPage, setSessionPage] = useState(0);
+  const [hasMoreSessions, setHasMoreSessions] = useState(true);
+
+  // Fetch session history
+  const fetchSessionHistory = async (page = 0, limit = 5) => {
+    if (!isAuthenticated || isLoadingSessions) return;
+    
+    try {
+      setIsLoadingSessions(true);
+      const response = await apiClient.getSessionHistory(limit, page * limit);
+      
+      if (page === 0) {
+        setSessionHistory(response.sessions || []);
+      } else {
+        setSessionHistory(prev => [...prev, ...(response.sessions || [])]);
+      }
+      
+      setHasMoreSessions((response.sessions || []).length === limit);
+    } catch (error) {
+      console.error('Failed to fetch session history:', error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  // Fetch session stats
+  const fetchSessionStats = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const stats = await apiClient.getSessionStats();
+      setSessionStats(stats);
+    } catch (error) {
+      console.error('Failed to fetch session stats:', error);
+    }
+  };
+
+  // Load session data when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchSessionHistory(0);
+      fetchSessionStats();
+    }
+  }, [isAuthenticated, user]);
+
+  // Helper function to format duration
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) {
+      return `${Math.round(minutes)}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = Math.round(minutes % 60);
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  };
+
+  // Helper function to format timestamp
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return `${diffMinutes}m ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays}d ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  // Helper function to get device icon
+  const getDeviceIcon = (device: string) => {
+    if (device?.toLowerCase().includes('mobile') || device?.toLowerCase().includes('android') || device?.toLowerCase().includes('iphone')) {
+      return <Smartphone className="h-3 w-3" />;
+    }
+    return <Monitor className="h-3 w-3" />;
+  };
 
   // Mock quiz data - in real app, this would come from API
   const quizzes = [
@@ -55,36 +145,7 @@ export function Sidebar() {
     }
   ];
 
-  const recentSessions = [
-    {
-      title: "Machine Learning Basics",
-      subtitle: "What is supervised learning and how does it differ from...",
-      time: "2 hours ago",
-      status: "Quiz Generated",
-      statusColor: "bg-green-100 text-green-700",
-    },
-    {
-      title: "Python Data Structures",
-      subtitle: "Can you explain the difference between lists and tuples...",
-      time: "1 day ago",
-      status: "Study Plan",
-      statusColor: "bg-blue-100 text-blue-700",
-    },
-    {
-      title: "React Hooks Deep Dive",
-      subtitle: "How do I use useEffect with cleanup functions...",
-      time: "3 days ago",
-      status: "Completed",
-      statusColor: "bg-gray-100 text-gray-700",
-    },
-    {
-      title: "Database Design Principles",
-      subtitle: "What are the best practices for normalizing...",
-      time: "5 days ago",
-      status: "Completed",
-      statusColor: "bg-purple-100 text-purple-700",
-    },
-  ]
+
 
   return (
     <div className="w-80 bg-background border-r border-border flex flex-col">
@@ -111,7 +172,7 @@ export function Sidebar() {
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 h-10"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => setShowQuizDashboard(!showQuizDashboard)}
           >
             <BarChart3 className="h-4 w-4" />
             Quiz Dashboard
@@ -347,29 +408,101 @@ export function Sidebar() {
 
       {/* Recent Sessions */}
       <div className="flex-1 p-4 overflow-y-auto">
-        <h3 className="font-medium text-sm mb-3 text-muted-foreground">Recent Sessions</h3>
-        <div className="space-y-3">
-          {recentSessions.slice(0, 2).map((session, index) => (
-            <Card key={index} className="p-3 hover:bg-muted/50 cursor-pointer">
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-foreground mb-1">{session.title}</h4>
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{session.subtitle}</p>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{session.time}</span>
-                  </div>
-                </div>
-                <Badge className={`text-xs ${session.statusColor} border-0`}>{session.status}</Badge>
-              </div>
-            </Card>
-          ))}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium text-sm text-muted-foreground">Recent Sessions</h3>
+          {sessionStats && (
+            <Badge variant="outline" className="text-xs">
+              {sessionStats.total_sessions} total
+            </Badge>
+          )}
         </div>
-        {
-          recentSessions.length > 2 && (
-            <Button variant={"link"} className="p-0">more</Button>
-          )
-        }
+        
+        {/* Session Stats Summary */}
+        {sessionStats && (
+          <Card className="p-3 mb-3 bg-orange-50 border-orange-200">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="text-center">
+                <div className="font-semibold text-orange-700">{formatDuration(sessionStats.total_time_minutes)}</div>
+                <div className="text-orange-600">Total Time</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-orange-700">{formatDuration(sessionStats.average_duration_minutes)}</div>
+                <div className="text-orange-600">Avg Session</div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        <div className="space-y-3">
+          {isLoadingSessions && sessionHistory.length === 0 ? (
+            <div className="text-center py-4">
+              <div className="text-xs text-muted-foreground">Loading sessions...</div>
+            </div>
+          ) : sessionHistory.length === 0 ? (
+            <div className="text-center py-4">
+              <div className="text-xs text-muted-foreground">No recent sessions</div>
+            </div>
+          ) : (
+            sessionHistory.slice(0, 3).map((session, index) => (
+              <Card key={session._id || index} className="p-3 hover:bg-muted/50 cursor-pointer">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      {getDeviceIcon(session.device_info)}
+                      <h4 className="font-medium text-sm text-foreground">
+                        {session.browser || 'Web Session'}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Globe className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {session.ip_address || 'Unknown location'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {formatTimestamp(session.login_timestamp)}
+                      </span>
+                      {session.duration_minutes && (
+                        <>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDuration(session.duration_minutes)}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <Badge 
+                    className={`text-xs border-0 ${
+                      session.logout_timestamp 
+                        ? 'bg-gray-100 text-gray-700' 
+                        : 'bg-green-100 text-green-700'
+                    }`}
+                  >
+                    {session.logout_timestamp ? 'Ended' : 'Active'}
+                  </Badge>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+        
+        {sessionHistory.length > 3 && (
+          <Button 
+            variant="link" 
+            className="p-0 mt-2 text-xs"
+            onClick={() => {
+              const nextPage = sessionPage + 1;
+              setSessionPage(nextPage);
+              fetchSessionHistory(nextPage);
+            }}
+            disabled={isLoadingSessions || !hasMoreSessions}
+          >
+            {isLoadingSessions ? 'Loading...' : 'Load more'}
+          </Button>
+        )}
       </div>
 
       {/* Upgrade Section */}
@@ -380,6 +513,24 @@ export function Sidebar() {
           <Button className="w-full bg-white text-orange-500 hover:bg-orange-50">Learn More</Button>
         </Card>
       </div> */}
+      
+      {/* Quiz Dashboard */}
+      {showQuizDashboard && (
+        <div className="fixed inset-0 bg-white z-50 overflow-auto">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold">Quiz Management Dashboard</h1>
+              <Button
+                variant="outline"
+                onClick={() => setShowQuizDashboard(false)}
+              >
+                Back to Sidebar
+              </Button>
+            </div>
+            <QuizManagementDashboard />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -4,8 +4,8 @@ import { QuizManagementDashboard } from '@/components/quiz/quiz-management-dashb
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
+    <div className="min-h-screen bg-background transition-colors">
+      <div className="container mx-auto p-4 md:p-6">
         <QuizManagementDashboard />
       </div>
     </div>

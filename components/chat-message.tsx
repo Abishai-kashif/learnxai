@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { CheckCircle, Circle, ArrowLeft, ArrowRight, Trophy, Rabbit } from "lucide-react"
+import { CheckCircle, Circle, ArrowLeft, ArrowRight, Trophy, Rabbit, Save, Check } from "lucide-react"
 import ProfileImage from "./profile-image"
+import { apiClient } from "@/lib/api"
 
 const ChatMessage = (props: ChatMessageProps) => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({})
@@ -19,11 +20,12 @@ const ChatMessage = (props: ChatMessageProps) => {
     const { content, user = { name: "US" } } = props as UserMessageProps
     return (
       <div className="flex gap-3 justify-end">
-        <div className="bg-orange-500 text-white rounded-lg p-4 max-w-md">
-          <p className="text-sm">{content}</p>
-        </div>
-        <ProfileImage user={user} />
-      </div>
+       <div className="bg-orange-500 text-white rounded-lg p-4 max-w-md break-words whitespace-pre-wrap overflow-hidden">
+  <p className="text-sm break-words whitespace-pre-wrap overflow-hidden">
+    {content}
+  </p>
+</div>
+</div>
     )
   }
 
@@ -51,10 +53,22 @@ const ChatMessage = (props: ChatMessageProps) => {
     const { content } = props as QuizMessageProps
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [quizCompleted, setQuizCompleted] = useState(false)
+    const [quizSaved, setQuizSaved] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const [attemptId, setAttemptId] = useState<string | null>(null)
+    const [quizStartTime, setQuizStartTime] = useState<Date | null>(null)
     const [quizResults, setQuizResults] = useState<{
       score: number
       total: number
       answers: Record<string, string>
+      detailedAnswers: Array<{
+        question_index: number
+        question: string
+        selected_answer: string
+        correct_answer: string
+        is_correct: boolean
+        time_taken?: number
+      }>
     } | null>(null)
 
     const questions = content.questions || []
@@ -69,12 +83,12 @@ const ChatMessage = (props: ChatMessageProps) => {
       }))
     }
 
-    const handleNext = () => {
+    const handleNext = async () => {
       if (currentQuestionIndex < totalQuestions - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1)
       } else {
         // Quiz completed
-        calculateResults()
+        await calculateResults()
         setQuizCompleted(true)
       }
     }
@@ -85,23 +99,47 @@ const ChatMessage = (props: ChatMessageProps) => {
       }
     }
 
-    const calculateResults = () => {
+    const calculateResults = async () => {
       let correctAnswers = 0
       const userAnswers: Record<string, string> = {}
+      const detailedAnswers: Array<{
+        question_index: number
+        question: string
+        selected_answer: string
+        correct_answer: string
+        is_correct: boolean
+        time_taken?: number
+      }> = []
 
       questions.forEach((question, index) => {
-        const userAnswer = selectedAnswers[index]
-        userAnswers[`question_${index}`] = userAnswer || ""
-        if (userAnswer === question.answer) {
+        const userAnswer = selectedAnswers[index] || ""
+        const isCorrect = userAnswer === question.answer
+        
+        userAnswers[`question_${index}`] = userAnswer
+        if (isCorrect) {
           correctAnswers++
         }
+
+        detailedAnswers.push({
+          question_index: index,
+          question: question.question,
+          selected_answer: userAnswer,
+          correct_answer: question.answer,
+          is_correct: isCorrect
+        })
       })
 
-      setQuizResults({
+      const results = {
         score: correctAnswers,
         total: questions.length,
         answers: userAnswers,
-      })
+        detailedAnswers
+      }
+
+      setQuizResults(results)
+
+      // Save quiz attempt to session history
+      await saveQuizAttempt(results)
     }
 
     const handleRetryQuiz = () => {
@@ -109,6 +147,86 @@ const ChatMessage = (props: ChatMessageProps) => {
       setQuizResults(null)
       setCurrentQuestionIndex(0)
       setSelectedAnswers({})
+      setAttemptId(null)
+      setQuizStartTime(null)
+      
+      // Start a new attempt if quiz is already saved
+      if (quizSaved) {
+        // We'll need to get the quiz ID from the saved quiz
+        // For now, we'll start tracking when user begins answering
+      }
+    }
+
+    const saveQuiz = async () => {
+      if (quizSaved || isSaving) return
+      
+      setIsSaving(true)
+      try {
+        const result = await apiClient.storeQuiz({
+          title: content.title || "Generated Quiz",
+          estimatedTime: content.estimatedTime || "5 minutes",
+          questions: content.questions || [],
+          currentQuestionIndex: 0
+        })
+        
+        if (result.success) {
+          setQuizSaved(true)
+          console.log('Quiz saved successfully with ID:', result.quiz_id)
+          
+          // Start quiz attempt tracking when quiz is saved
+          await startQuizAttempt(result.quiz_id)
+        } else {
+          console.error('Failed to save quiz:', result.message)
+        }
+      } catch (error) {
+        console.error('Error saving quiz:', error)
+      } finally {
+        setIsSaving(false)
+      }
+    }
+
+    const startQuizAttempt = async (quizId: string) => {
+      try {
+        const result = await apiClient.startQuizAttempt(quizId)
+        if (result.success) {
+          setAttemptId(result.attempt_id)
+          setQuizStartTime(new Date())
+          console.log('Quiz attempt started with ID:', result.attempt_id)
+        }
+      } catch (error) {
+        console.error('Error starting quiz attempt:', error)
+      }
+    }
+
+    const saveQuizAttempt = async (results: any) => {
+      if (!attemptId) {
+        console.warn('No attempt ID available for saving quiz attempt')
+        return
+      }
+
+      try {
+        const timeTaken = quizStartTime ? (new Date().getTime() - quizStartTime.getTime()) / 1000 : undefined
+        const percentage = (results.score / results.total) * 100
+
+        const attemptData = {
+          user_id: "", // Will be set by backend from auth
+          quiz_id: "", // Will be set by backend
+          quiz_title: content.title || "Generated Quiz",
+          answers: results.detailedAnswers,
+          score: results.score,
+          total_questions: results.total,
+          percentage: percentage,
+          time_taken: timeTaken,
+          status: "completed"
+        }
+
+        const result = await apiClient.completeQuizAttempt(attemptId, attemptData)
+        if (result.success) {
+          console.log('Quiz attempt completed successfully')
+        }
+      } catch (error) {
+        console.error('Error saving quiz attempt:', error)
+      }
     }
 
     if (quizCompleted && quizResults) {
@@ -179,9 +297,35 @@ const ChatMessage = (props: ChatMessageProps) => {
                     </CardDescription>
                   </div>
                 </div>
-                <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
-                  {currentQuestionIndex + 1}/{totalQuestions}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={saveQuiz}
+                    disabled={quizSaved || isSaving}
+                    variant="outline"
+                    size="sm"
+                    className={`${quizSaved ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-300' : ''}`}
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-500 mr-2"></div>
+                        Saving...
+                      </>
+                    ) : quizSaved ? (
+                      <>
+                        <Check className="h-3 w-3 mr-2" />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-3 w-3 mr-2" />
+                        Save Quiz
+                      </>
+                    )}
+                  </Button>
+                  <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                    {currentQuestionIndex + 1}/{totalQuestions}
+                  </Badge>
+                </div>
               </div>
 
               <div className="w-full bg-muted rounded-full h-2 mb-4">

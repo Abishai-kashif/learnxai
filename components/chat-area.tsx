@@ -6,7 +6,7 @@ import {
   Plus,
   Send
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { parseJSON } from "@/lib/utils";
 import { FaRobot } from "react-icons/fa";
 import ChatMessage from "./chat-message";
@@ -20,6 +20,16 @@ export function ChatArea({ user }: { user: User }) {
   const [currentResponse, setCurrentResponse] = useState("")
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }
+    }
+  }
 
   const chat = async (session: ChatMessageProps[]) => {
     try {
@@ -163,6 +173,11 @@ export function ChatArea({ user }: { user: User }) {
     }
   }
 
+  // Auto-scroll when session changes or response is being generated
+  useEffect(() => {
+    scrollToBottom()
+  }, [session, currentResponse])
+
   return (
     <div className="flex-1 flex flex-col bg-background">
       {/* Header */}
@@ -192,7 +207,7 @@ export function ChatArea({ user }: { user: User }) {
       </div>
 
       {/* Chat Messages */}
-      <ScrollArea className="flex-1 px-4 py-4 overflow-y-auto">
+      <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-4 overflow-y-auto">
         <div className="space-y-5">
           {
             session.length === 0 ? (
@@ -235,24 +250,31 @@ export function ChatArea({ user }: { user: User }) {
       <div />  
 
       <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3">
-          <Button size="sm" variant="ghost">
+        <div className="flex items-start gap-3">
+          <Button size="sm" variant="ghost" className="mt-2">
             <span className="text-lg"><Plus /></span>
           </Button>
           <div className="flex-1 relative">
             <textarea
               value={input}
               onKeyDown={handleKeyDown}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value)
+                // Auto-resize textarea
+                const textarea = e.target as HTMLTextAreaElement
+                textarea.style.height = 'auto'
+                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+              }}
               placeholder="Ask me anything or continue our conversation..."
               rows={1}
-              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12 bg-background text-foreground resize-none"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12 bg-background text-foreground resize-none overflow-hidden min-h-[48px] max-h-[120px] leading-relaxed"
+              style={{ height: 'auto' }}
             />
             <Button
               size="sm"
               onClick={submitMessage}
               disabled={loading || input.trim().length === 0}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute right-2 top-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="h-4 w-4" />
             </Button>

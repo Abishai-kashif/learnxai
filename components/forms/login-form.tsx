@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthService } from "@/lib/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Form,
   FormField,
@@ -25,9 +25,9 @@ const loginSchema = z.object({
 type LoginValues = z.infer<typeof loginSchema>;
 
 function LoginForm({ showPassword, setShowPassword }: IProps) {
-    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
+    const { login, isLoading } = useAuth();
 
     const loginForm = useForm<LoginValues>({
         resolver: zodResolver(loginSchema),
@@ -38,43 +38,14 @@ function LoginForm({ showPassword, setShowPassword }: IProps) {
     });
 
     const onLoginSubmit = async (values: LoginValues) => {
-        setIsLoading(true);
         setError(null);
         
         try {
-            const BASE_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://localhost:8001";
-            const URL = `${BASE_URL}/login`;
-
-            const response = await fetch(URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    email: values.email,
-                    password: values.password,
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.detail || "Invalid credentials. Please try again.");
-            }
-
-            const data = await response.json();
-            const token = data?.access_token;
-
-            if (!token) {
-                throw new Error("Authentication failed. Please try again.");
-            }
-
-            AuthService.setToken(token);
+            await login(values.email, values.password);
             router.push('/chat');
         } catch (error) {
             console.error("Error signing in user:", error);
             setError(error instanceof Error ? error.message : "An unexpected error occurred");
-        } finally {
-            setIsLoading(false);
         }
     };
 

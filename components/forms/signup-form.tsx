@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthService } from "@/lib/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Form,
   FormField,
@@ -53,10 +53,10 @@ function SignupForm({
   showConfirmPassword,
   setShowConfirmPassword,
 }: IProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
+  const { signup, isLoading } = useAuth();
 
   const signupForm = useForm<SignUpValues>({
     resolver: zodResolver(signupSchema),
@@ -70,40 +70,12 @@ function SignupForm({
   });
 
   const onSignupSubmit = async (values: SignUpValues) => {
-    setIsLoading(true);
     setError(null);
     setSuccess(null);
     
     try {
-      const BASE_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://localhost:8001";
-      const URL = `${BASE_URL}/signup`;
-
-      const response = await fetch(URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: values.name,
-          email: values.email,
-          password: values.password,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || "Registration failed. Please try again.");
-      }
-
-      const data = await response.json();
-      const token = data?.access_token;
-
-      if (!token) {
-        throw new Error("Registration successful but authentication failed. Please try signing in.");
-      }
-
+      await signup(values.name, values.email, values.password);
       setSuccess("Account created successfully! Redirecting...");
-      AuthService.setToken(token);
       
       // Small delay to show success message
       setTimeout(() => {
@@ -112,8 +84,6 @@ function SignupForm({
     } catch (error) {
       console.error("Error signing up user:", error);
       setError(error instanceof Error ? error.message : "An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
     }
   };
 

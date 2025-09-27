@@ -1,42 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { ChatArea } from "@/components/chat-area";
 import { AnalyticsPanel } from "@/components/analytics-panel";
-import { AuthService } from "@/lib/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
 
 interface ChatPageContentProps {
   ids: Array<string>;
 }
 
 export default function ChatPageContent({ ids }: ChatPageContentProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await AuthService.getCurrentUser();
-        setUser(userData);
-      } catch (error) {
-        console.error("Error loading user:", error);
-        AuthService.logout();
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadUser();
-  }, []);
+  const { user, isLoading } = useAuth();
 
   if (ids?.length > 1) {
     throw Error("One session at a time.");
