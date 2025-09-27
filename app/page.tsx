@@ -7,6 +7,7 @@ import Statistics from "@/components/sections/statistics";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Brain } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 
 function Page() {
@@ -38,7 +39,7 @@ function Page() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Button variant="ghost">Sign In</Button>
+            <Link href="/auth"><Button variant="ghost">Sign In</Button></Link>
             <CtaButton className="bg-orange-500 hover:bg-orange-600 text-white">Get Started</CtaButton>
             <ThemeToggle />
           </div>
