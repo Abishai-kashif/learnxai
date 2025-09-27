@@ -6,6 +6,7 @@ import { ChatArea } from "@/components/chat-area";
 import { AnalyticsPanel } from "@/components/analytics-panel";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface ChatPageContentProps {
   ids: Array<string>;
@@ -13,12 +14,38 @@ interface ChatPageContentProps {
 
 export default function ChatPageContent({ ids }: ChatPageContentProps) {
   const { user, isLoading } = useAuth();
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
+
+  // Load last active session from localStorage on component mount
+  useEffect(() => {
+    if (!isLoading && user) {
+      try {
+        const lastSessionId = localStorage.getItem('last-active-session');
+        if (lastSessionId) {
+          // Verify session exists in storage
+          const sessions = localStorage.getItem('chat-sessions');
+          if (sessions) {
+            const sessionData = JSON.parse(sessions);
+            const sessionExists = sessionData.find((s: any) => s.id === lastSessionId);
+            if (sessionExists) {
+              setCurrentSessionId(lastSessionId);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading last session:', error);
+      } finally {
+        setIsLoadingSession(false);
+      }
+    }
+  }, [isLoading, user]);
 
   if (ids?.length > 1) {
     throw Error("One session at a time.");
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingSession) {
     return (
       <div className="flex flex-col h-screen bg-orange-50 items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -40,12 +67,36 @@ export default function ChatPageContent({ ids }: ChatPageContentProps) {
     );
   }
 
+  const handleSelectSession = (sessionId: string | null) => {
+    setCurrentSessionId(sessionId);
+    // Save last active session to localStorage
+    if (sessionId) {
+      localStorage.setItem('last-active-session', sessionId);
+    } else {
+      localStorage.removeItem('last-active-session');
+    }
+  };
+
+  const handleNewChat = () => {
+    setCurrentSessionId(null);
+    localStorage.removeItem('last-active-session');
+  };
+
   return (
     <div className="flex flex-col h-screen bg-orange-50 min-w-5xl">
       <Header user={user} />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <ChatArea user={user} />
+        <Sidebar 
+          onSelectSession={handleSelectSession}
+          currentSessionId={currentSessionId}
+          onNewChat={handleNewChat}
+        />
+        <ChatArea 
+          user={user} 
+          currentSessionId={currentSessionId}
+          onSessionChange={handleSelectSession}
+          onNewChat={handleNewChat}
+        />
         <AnalyticsPanel />
       </div>
     </div>
