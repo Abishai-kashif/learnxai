@@ -1,19 +1,19 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { PROMPT_SUGGESTIONS } from "@/contants";
+import { parseJSON } from "@/lib/utils";
 import {
   Download,
   MoreHorizontal,
   Plus,
   Send
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { parseJSON } from "@/lib/utils";
+import { useEffect, useRef, useState } from "react";
 import { FaRobot } from "react-icons/fa";
 import ChatMessage from "./chat-message";
 import { ScrollArea } from "./ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { ChatMessageProps, QuizMessageResponse, AssistantMessageProps, UserMessageProps, User, Session, StoredSession } from "@/types";
-import { PROMPT_SUGGESTIONS } from "@/contants";
+import { ChatMessageProps, QuizQuestions, AssistantMessageProps, UserMessageProps, User, Session, StoredSession } from "@/types";
 
 interface ChatAreaProps {
   user: User;
@@ -206,21 +206,20 @@ const saveSession = (messages: Session, sessionId?: string): string => {
       // Add the complete assistant response
       if (accumulatedResponse) {
         console.log('\n\naccumulatedResponse:>>>  ', accumulatedResponse, '\n')
-        const quizzes = parseJSON<QuizMessageResponse | null>(accumulatedResponse)
+        const quizzes = parseJSON<QuizQuestions | null>(accumulatedResponse)
         console.log('\n\nquizData:>>>  ', quizzes, '\n')
 
         let assistantMessage: ChatMessageProps;
 
         if (quizzes) {
-          const title = `Here is your well crafted quiz ${user?.name || ''}`
+
           const estimatedTime = '2'
           const currentQuestionIndex = 0
 
           const quizData = {
-            title,
             estimatedTime,
             currentQuestionIndex,
-            questions: quizzes
+            ...quizzes
           }
 
           assistantMessage = {
@@ -388,7 +387,7 @@ const saveSession = (messages: Session, sessionId?: string): string => {
             ) : (
               session.map((message, index) => {
                 return <ChatMessage
-                  key={index}
+                  key={`${message.role}_${index}`}
                   {...message}
                   {...(message.role == "user" ? { user } : {})}
                 />

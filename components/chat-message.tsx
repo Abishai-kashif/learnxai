@@ -1,19 +1,23 @@
 "use client"
 
-import { AssistantMessageProps, ChatMessageProps, QuizMessageProps, UserMessageProps } from "@/types"
-import { useState } from "react"
-import { FaRobot } from "react-icons/fa"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { CheckCircle, Circle, ArrowLeft, ArrowRight, Trophy, Rabbit, Save, Check } from "lucide-react"
 import ProfileImage from "./profile-image"
 import { apiClient } from "@/lib/api"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark'
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { saveUserQuiz } from "@/db"
+import { AssistantMessageProps, ChatMessageProps, QuizMessageProps, UserMessageProps } from "@/types"
+import { ArrowLeft, ArrowRight, Check, Circle, Rabbit, Save, Trophy } from "lucide-react"
+import { useId, useState } from "react"
+import { FaRobot } from "react-icons/fa"
 
 const ChatMessage = (props: ChatMessageProps) => {
-  const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({})
 
   // User message variant
   if (props.role === "user") {
@@ -50,6 +54,8 @@ const ChatMessage = (props: ChatMessageProps) => {
 
   // Quiz content role
   if (props.role === "quiz") {
+    const quizId = useId()
+    const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({})
     const { content } = props as QuizMessageProps
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [quizCompleted, setQuizCompleted] = useState(false)
@@ -162,21 +168,21 @@ const ChatMessage = (props: ChatMessageProps) => {
       
       setIsSaving(true)
       try {
-        const result = await apiClient.storeQuiz({
+        const dbQuiz = {
           title: content.title || "Generated Quiz",
-          estimatedTime: content.estimatedTime || "5 minutes",
           questions: content.questions || [],
-          currentQuestionIndex: 0
-        })
-        console.log('Save quiz result:', result)
-        if (result.success) {
+          estimatedTime: 5,
+          userId: ''
+        }
+
+        const response = await saveUserQuiz(dbQuiz)
+
+        console.log('Save quiz result:')
+        if (response?.ok) {
           setQuizSaved(true)
-          console.log('Quiz saved successfully with ID:', result.quiz_id)
-          
-          // Start quiz attempt tracking when quiz is saved
-          await startQuizAttempt(result.quiz_id)
+          console.log('Quiz saved successfully')
         } else {
-          console.error('Failed to save quiz:', result.message)
+          console.error('Failed to save quiz:')
         }
       } catch (error) {
         console.error('Error saving quiz:', error)
@@ -362,10 +368,10 @@ const ChatMessage = (props: ChatMessageProps) => {
                       >
                         <RadioGroupItem
                           value={option}
-                          id={`q${currentQuestionIndex}_option${index}`}
+                          id={`${quizId}-q${currentQuestionIndex}_option${index}`}
                         />
                         <Label
-                          htmlFor={`q${currentQuestionIndex}_option${index}`}
+                          htmlFor={`${quizId}-q${currentQuestionIndex}_option${index}`}
                           className="flex-1 cursor-pointer font-normal"
                         >
                           <span className="font-medium text-muted-foreground mr-2">

@@ -1,3 +1,5 @@
+import { QuizMessageResponse } from "@/types";
+
 export async function fetchCurrentSession(id: string | undefined) {
 	try {
 		const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
@@ -19,6 +21,33 @@ export async function fetchCurrentSession(id: string | undefined) {
 	} catch (error) {
 		console.error("Something went wrong while fetching Session: ", error);
 		return [];
+	}
+}
+
+export async function saveUserQuiz(quizData: {
+	title: string;
+	questions: QuizMessageResponse;
+	estimatedTime: number;
+	userId: string;
+}): Promise<Response | null> {
+	try {
+		const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
+		const URL = `${BASE_URL}/quizzes/create`;
+
+		if (!quizData) return null;
+
+		const payload = JSON.stringify(quizData);
+
+		return await fetch(URL, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: payload,
+		});
+	} catch (error) {
+		console.error("Something went wrong while fetching Session: ", error);
+		return null;
 	}
 }
 

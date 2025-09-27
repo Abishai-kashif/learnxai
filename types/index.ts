@@ -13,6 +13,11 @@ export interface QuizQuestion {
 
 export type QuizMessageResponse = QuizQuestion[]; 
 
+export interface QuizQuestions {
+	title: string;
+	questions: QuizMessageResponse;
+}
+
 export interface QuizData {
 	title?: string;
 	estimatedTime?: string;
