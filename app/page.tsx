@@ -6,9 +6,9 @@ import Pricing from "@/components/sections/pricing";
 import Statistics from "@/components/sections/statistics";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Brain } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import Image from "next/image";
 
 function Page() {
   return (
@@ -17,10 +17,9 @@ function Page() {
       <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5 text-white" />
+            <div className="rounded-lg flex items-center justify-center">
+              <Image src="/logo.png" alt="Logo" width={80} height={80} />
             </div>
-            <span className="text-xl font-bold">SuperAI</span>
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">
@@ -57,11 +56,10 @@ function Page() {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg flex items-center justify-center">
+                  <Image src="/logo.png" alt="Logo" width={100} height={100} />
                 </div>
-                <span className="text-xl font-bold">SuperAI</span>
               </div>
               <p className="text-sidebar-foreground/80 text-pretty">
                 Transforming education through the power of artificial intelligence and personalized learning.
