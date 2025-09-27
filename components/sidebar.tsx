@@ -184,10 +184,12 @@ export function Sidebar({
             </Button>
           </Link>
         </div>
-        <Button variant="ghost" className="w-full justify-start gap-3 h-10">
-          <GiProgression className="h-4 w-4" />
-          Progress Analytics
-        </Button>
+           <Link href="/progress-analytics">
+      <Button variant="ghost" className="w-full justify-start gap-3 h-10">
+        <GiProgression className="h-4 w-4" />
+        Progress Analytics
+      </Button>
+    </Link>
       </div>
 
       {/* Chat Sessions List */}

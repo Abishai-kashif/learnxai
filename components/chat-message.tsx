@@ -8,12 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Circle, ArrowLeft, ArrowRight, Trophy, Rabbit, Save, Check } from "lucide-react"
+import { CheckCircle, Circle, ArrowLeft, ArrowRight, Trophy, Rabbit, Save, Check } from "lucide-react"
+import ProfileImage from "./profile-image"
 import { apiClient } from "@/lib/api"
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark'
 
 const ChatMessage = (props: ChatMessageProps) => {
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({})
@@ -23,16 +20,16 @@ const ChatMessage = (props: ChatMessageProps) => {
     const { content, user = { name: "US" } } = props as UserMessageProps
     return (
       <div className="flex gap-3 justify-end">
-        <div className="bg-orange-500 text-white rounded-lg p-4 max-w-md break-words whitespace-pre-wrap overflow-hidden">
-          <p className="text-sm break-words whitespace-pre-wrap overflow-hidden">
-            {content}
-          </p>
-        </div>
-      </div>
+       <div className="bg-orange-500 text-white rounded-lg p-4 max-w-md break-words whitespace-pre-wrap overflow-hidden">
+  <p className="text-sm break-words whitespace-pre-wrap overflow-hidden">
+    {content}
+  </p>
+</div>
+</div>
     )
   }
 
-  // Assistant content role with Markdown
+  // Assistant content role
   if (props.role === "assistant") {
     const { content } = props as AssistantMessageProps
     return (
@@ -44,81 +41,14 @@ const ChatMessage = (props: ChatMessageProps) => {
         </div>
         <div className={`flex-1`}>
           <div className="bg-muted rounded-lg p-4 mb-2 w-fit max-w-[90%]">
-            <div className="text-sm text-foreground prose prose-sm prose-orange max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  code({ node, className, children, ...props }) {
-                    const match = /language-(\w+)/.exec(className || '')
-                    const isInline = !(className && className.startsWith('language-'))
-                    return !isInline && match ? (
-                      <SyntaxHighlighter
-                        style={oneDark as any}
-                        language={match[1]}
-                        PreTag="div"
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
-                    ) : (
-                      <code className="bg-muted-foreground/20 px-1 py-0.5 rounded text-sm" {...props}>
-                        {children}
-                      </code>
-                    )
-                  },
-                  h1: ({ children }) => <h1 className="text-2xl font-bold mt-4 mb-2">{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-xl font-bold mt-4 mb-2">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-lg font-bold mt-3 mb-2">{children}</h3>,
-                  h4: ({ children }) => <h4 className="text-base font-bold mt-3 mb-1">{children}</h4>,
-                  p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
-                  ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-                  li: ({ children }) => <li className="ml-4">{children}</li>,
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-orange-500 pl-4 italic my-2">
-                      {children}
-                    </blockquote>
-                  ),
-                  table: ({ children }) => (
-                    <div className="overflow-x-auto my-2">
-                      <table className="min-w-full border-collapse border border-gray-300">
-                        {children}
-                      </table>
-                    </div>
-                  ),
-                  th: ({ children }) => (
-                    <th className="border border-gray-300 px-3 py-2 bg-muted font-semibold">
-                      {children}
-                    </th>
-                  ),
-                  td: ({ children }) => (
-                    <td className="border border-gray-300 px-3 py-2">
-                      {children}
-                    </td>
-                  ),
-                  a: ({ href, children }) => (
-                    <a 
-                      href={href} 
-                      className="text-orange-600 hover:text-orange-700 underline"
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                    >
-                      {children}
-                    </a>
-                  ),
-                  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                  em: ({ children }) => <em className="italic">{children}</em>,
-                }}
-              >
-                {content}
-              </ReactMarkdown>
-            </div>
+            <p className="text-sm text-foreground">{content}</p>
           </div>
         </div>
       </div>
     )
   }
 
-  // Quiz content role (same as before)
+  // Quiz content role
   if (props.role === "quiz") {
     const { content } = props as QuizMessageProps
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
