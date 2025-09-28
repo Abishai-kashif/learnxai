@@ -73,18 +73,6 @@ export default function Auth() {
 
         {/* Right Side - Auth Form */}
         <div className="w-full max-w-md">
-          <div className="mb-8 text-center lg:text-left">
-            <Link 
-              href="/" 
-              className="inline-flex items-center text-slate-600 hover:text-orange-600 transition-colors mb-6 font-medium"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to learnXai
-            </Link>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome Back</h1>
-            <p className="text-slate-600 text-lg">Continue your learning journey with us</p>
-          </div>
-
           <Card className="border-0 bg-white/80 backdrop-blur-sm shadow-2xl shadow-orange-500/10">
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl text-center text-slate-900 font-bold">

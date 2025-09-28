@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { QuizCards } from '../quiz-dashboard/quiz-cards'
 import { QuizCreator } from './quiz-creator'
+import QuizGenerationDialog from "../quiz-generator-dialog"
 
 interface Quiz {
   id: string
@@ -57,10 +58,10 @@ export function QuizManagementDashboard() {
     fetchQuizzes();
   }, [])
 
-  const handleQuizCreated = (newQuiz: any) => {
-    setQuizzes(prev => [...prev, { ...newQuiz, id: Date.now().toString() }])
-    setShowQuizCreator(false)
-  }
+  // const handleQuizCreated = (newQuiz: any) => {
+  //   setQuizzes(prev => [...prev, { ...newQuiz, id: Date.now().toString() }])
+  //   setShowQuizCreator(false)
+  // }
 
   if (loading) {
     return (
@@ -128,7 +129,7 @@ export function QuizManagementDashboard() {
               </Button>
             </div>
             <div className="p-6">
-              <QuizCreator onQuizCreated={handleQuizCreated} />
+                <QuizGenerationDialog open={showQuizCreator} onOpenChange={setShowQuizCreator} />
             </div>
           </div>
         </div>

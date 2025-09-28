@@ -7,6 +7,9 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell
 } from "recharts"
 import { motion } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 
 interface ChatSession {
   id: string
@@ -88,13 +91,22 @@ export default function ProgressAnalyticsPage() {
   return (
     <div className="w-full md:w-4/5 lg:w-3/4 mx-auto bg-background p-6 rounded-3xl shadow-xl space-y-8">
       {/* Header */}
-      <motion.h2
-        className="text-3xl font-bold text-foreground mb-6"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        Progress Analytics
-      </motion.h2>
+      <div className="flex items-center justify-between">
+        <motion.h2
+          className="text-3xl font-bold text-foreground mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          Progress Analytics
+        </motion.h2>
+
+        <Button variant="outline" className="border-border hover:bg-accent" asChild>
+          <Link href="/chat">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back to Chat
+          </Link>
+        </Button>
+      </div>
 
       {/* Today's Progress */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
