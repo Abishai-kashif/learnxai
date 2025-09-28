@@ -39,7 +39,7 @@ function Page() {
 
           <div className="flex items-center space-x-4">
             <Link href="/auth"><Button variant="ghost">Sign In</Button></Link>
-            <CtaButton className="bg-orange-500 hover:bg-orange-600 text-white">Get Started</CtaButton>
+            <Link href="/chat"><Button className="bg-orange-500 hover:bg-orange-600 text-white">Get Started</Button></Link>
             <ThemeToggle />
           </div>
         </div>
