@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Plus, Trash2, Save, Eye, BookOpen, Target, Brain, Globe } from 'lucide-react'
+import { apiClient } from '@/lib/api'
 
 interface QuizQuestion {
   id: string
@@ -58,6 +59,7 @@ export function QuizCreator({ onSave, onCancel, onQuizCreated }: QuizCreatorProp
   })
 
   const [activeTab, setActiveTab] = useState<'settings' | 'questions' | 'preview'>('settings')
+  const [isSaving, setIsSaving] = useState(false)
 
   const addQuestion = () => {
     if (currentQuestion.question.trim()) {
@@ -115,15 +117,63 @@ export function QuizCreator({ onSave, onCancel, onQuizCreated }: QuizCreatorProp
     }
   }
 
-  const saveQuiz = () => {
-    const quiz = {
-      ...quizData,
-      questions,
-      createdAt: new Date().toISOString(),
-      status: 'draft'
+  const saveQuiz = async () => {
+    if (!quizData.title.trim()) {
+      alert('Please enter a quiz title')
+      return
     }
-    onSave?.(quiz)
-    onQuizCreated?.(quiz)
+
+    if (questions.length === 0) {
+      alert('Please add at least one question')
+      return
+    }
+
+    setIsSaving(true)
+    
+    try {
+      const quiz = {
+        title: quizData.title,
+        description: quizData.description,
+        topic: quizData.topic,
+        difficulty: quizData.difficulty,
+        timeLimit: quizData.timeLimit,
+        questions: questions.map(q => ({
+          question: q.question,
+          options: q.options,
+          answer: q.type === 'multiple-choice' ? q.options?.[q.correctAnswer as number] : q.correctAnswer,
+          explanation: q.explanation,
+          difficulty: q.difficulty,
+          type: q.type
+        })),
+        estimatedTime: `${Math.ceil(questions.length * 1.5)} minutes`,
+        currentQuestionIndex: 0,
+        createdAt: new Date().toISOString(),
+        status: 'draft',
+        language: quizData.language,
+        questionTypes: quizData.questionTypes,
+        adaptiveMode: quizData.adaptiveMode,
+        showHints: quizData.showHints,
+        randomizeQuestions: quizData.randomizeQuestions
+      }
+
+      console.log('Saving quiz:', quiz)
+      
+      const result = await apiClient.storeQuiz(quiz)
+      
+      if (result.success) {
+        console.log('Quiz saved successfully:', result)
+        onSave?.(quiz)
+        onQuizCreated?.(quiz)
+        alert('Quiz saved successfully!')
+      } else {
+        throw new Error(result.message || 'Failed to save quiz')
+      }
+    } catch (error) {
+      console.error('Error saving quiz:', error)
+      alert(`Failed to save quiz: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
