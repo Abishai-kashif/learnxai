@@ -254,7 +254,7 @@ function SignupForm({
 
         <Button 
           type="submit" 
-          className="w-full h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl shadow-lg font-medium transition-all duration-200 hover:shadow-xl"
+          className="w-full h-12 text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-xl shadow-lg font-medium transition-all duration-200 hover:shadow-xl"
           disabled={isLoading}
         >
           {isLoading ? (

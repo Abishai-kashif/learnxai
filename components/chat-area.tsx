@@ -158,17 +158,30 @@ const saveSession = (messages: Session, sessionId?: string): string => {
     }
   }
 
-  const chat = async (session: ChatMessageProps[]) => {
+  const prepareApiSession = (sessionToConvert: Session): ChatMessageProps[] => {
+    // Convert session to API format
+    const apiSession: ChatMessageProps[] = sessionToConvert.map(item => {
+      return item.role === "quiz" ? {
+        role: "assistant",
+        content: "Emitting generated quiz for abbreviation."
+      } : item;
+    });
+    return apiSession;
+  }
+
+  const chat = async (apiSession: ChatMessageProps[]) => {
     try {
       const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
       const URL = `${BASE_URL}/chat`;
+
+      const _apiSession = prepareApiSession([...apiSession]);
 
       const response = await fetch(URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(session)
+        body: JSON.stringify(_apiSession)
       })
 
       if (!response.ok) {
@@ -193,8 +206,8 @@ const saveSession = (messages: Session, sessionId?: string): string => {
           try {
             const data = JSON.parse(line)
 
-            if (data.type === "raw_response_event" && data.delta) {
-              accumulatedResponse += data.delta
+            if (data.type === "raw_response_event" && data?.delta) {
+              accumulatedResponse += data?.delta
               setCurrentResponse(accumulatedResponse)
             }
           } catch (parseError) {
@@ -233,7 +246,7 @@ const saveSession = (messages: Session, sessionId?: string): string => {
           }
         }
         
-        const updatedSession = [...session, assistantMessage];
+        const updatedSession = [...apiSession, assistantMessage];
         setSession(updatedSession);
         
         // Save session after assistant response
@@ -258,7 +271,7 @@ const saveSession = (messages: Session, sessionId?: string): string => {
         content: "Sorry, I encountered an error. Please try again.",
       }
       
-      const updatedSession = [...session, errorMessage];
+      const updatedSession = [...apiSession, errorMessage];
       setSession(updatedSession);
       // Convert null to undefined when passing currentSessionId
       saveSession(updatedSession, currentSessionId || undefined);
@@ -293,21 +306,9 @@ const saveSession = (messages: Session, sessionId?: string): string => {
     }
 
     setInput("")
-    
-    // Prepare session for API call
-    const apiSession: ChatMessageProps[] = updatedSession.map(item => {
-      if (item.role === "quiz") {
-        return {
-          role: "assistant",
-          content: JSON.stringify(item.content)
-        } as ChatMessageProps;
-      }
-      return item as ChatMessageProps;
-    });
-
     try {
       setLoading(true)
-      await chat(apiSession)
+      await chat([...updatedSession])
     } catch (e) {
       console.error("Error: ", e)
     } finally {

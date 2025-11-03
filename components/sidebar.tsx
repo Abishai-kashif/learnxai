@@ -69,7 +69,7 @@ export function Sidebar({
   const handleRefresh = () => {
     setIsRefreshing(true);
     loadSessions();
-    setTimeout(() => setIsRefreshing(false), 500);
+    setTimeout(() => setIsRefreshing(false), 300);
   };
 
   const filteredSessions = sessions.filter(session =>
@@ -265,7 +265,6 @@ export function Sidebar({
       {/* Footer */}
       <div className="p-4 border-t border-border">
         <div className="text-xs text-muted-foreground text-center">
-          Chats are stored locally in your browser
         </div>
       </div>
     </div>
