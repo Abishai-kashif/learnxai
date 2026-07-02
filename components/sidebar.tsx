@@ -255,6 +255,7 @@ export function Sidebar({
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
+                  <Badge className={`text-xs ${session.statusColor} border-0`}>{session.status}</Badge>
                 </div>
               ))}
             </div>
