@@ -1,3 +1,9 @@
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Form,
   FormField,
@@ -6,41 +12,52 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { z } from "zod";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 
 const signupSchema = z
   .object({
-    name: z.string().min(2, "Full name must be at least 2 characters"),
+    name: z.string().min(1, "Name is required").min(2, "Name must be at least 2 characters"),
     email: z.string().min(1, "Email is required").email("Enter a valid email"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-    terms: z.boolean().refine((v) => v === true, {
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string().min(1, "Confirm password is required"),
+    terms: z.boolean().refine((val) => val === true, {
       message: "You must accept the terms and conditions",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
     path: ["confirmPassword"],
-    message: "Passwords do not match",
   });
 
 type SignUpValues = z.infer<typeof signupSchema>;
 
+interface IProps {
+	showPassword: boolean;
+	setShowPassword: (showPassword: boolean) => void;
+	showConfirmPassword: boolean;
+	setShowConfirmPassword: (showPassword: boolean) => void;
+}
 
-import React from "react";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
-import { redirect } from "next/navigation";
+function SignupForm({
+  showPassword,
+  setShowPassword,
+  showConfirmPassword,
+  setShowConfirmPassword,
+}: IProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
+  const { signup, isLoading } = useAuth();
 
-function SignupForm({ 
-											showPassword,
-											setShowPassword,
-											showConfirmPassword,
-											setShowConfirmPassword 
-										}: IProps) {
   const signupForm = useForm<SignUpValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -53,180 +70,205 @@ function SignupForm({
   });
 
   const onSignupSubmit = async (values: SignUpValues) => {
-		const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
-		const URL = `${BASE_URL}/signup`;
-
-		const { name, email, password } = values;
-		const user = { name, email, password }
-
-		try {
-			const response = await fetch(URL, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(user)
-			})
-
-			if (!response.ok) {
-				throw new Error("Network response was not ok");
-			}
-
-			const data = await response.json()
-			const token = data?.access_token
-			console.log('token: ', data)
-			localStorage.setItem("token", token)
-			redirect("/chat")
-
-			// const data = await response.json();
-			// console.log(data);
-		} catch (error) {
-			console.log('Error signing up user: ', error);
-		}
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      await signup(values.name, values.email, values.password);
+      setSuccess("Account created successfully! Redirecting...");
+      
+      // Small delay to show success message
+      setTimeout(() => {
+        router.push("/chat");
+      }, 1500);
+    } catch (error) {
+      console.error("Error signing up user:", error);
+      setError(error instanceof Error ? error.message : "An unexpected error occurred");
+    }
   };
 
 
   return (
-			<Form {...signupForm}>
-					<form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
-					<FormField
-							control={signupForm.control}
-							name="name"
-							render={({ field }) => (
-							<FormItem>
-									<FormLabel>Full Name</FormLabel>
-									<FormControl>
-									<Input
-											placeholder="Enter your full name"
-											{...field}
-											id="signup-name"
-											type="text"
-											className="border-foreground/20 focus:border-accent"
-									/>
-									</FormControl>
-									<FormMessage />
-							</FormItem>
-							)}
-					/>
+    <Form {...signupForm}>
+      <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-6">
+        {error && (
+          <Alert variant="destructive" className="bg-red-50 border-red-200">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-red-800">{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {success && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">{success}</AlertDescription>
+          </Alert>
+        )}
 
-					<FormField
-							control={signupForm.control}
-							name="email"
-							render={({ field }) => (
-							<FormItem>
-									<FormLabel>Email</FormLabel>
-									<FormControl>
-									<Input
-											placeholder="Enter your email"
-											{...field}
-											id="signup-email"
-											type="email"
-											className="border-foreground/20 focus:border-accent"
-									/>
-									</FormControl>
-									<FormMessage />
-							</FormItem>
-							)}
-					/>
+        <FormField
+          control={signupForm.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-gray-700 font-medium">Full Name</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Enter your full name"
+                  className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
+                  disabled={isLoading}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-					<FormField
-							control={signupForm.control}
-							name="password"
-							render={({ field }) => (
-							<FormItem>
-									<FormLabel>Password</FormLabel>
-									<FormControl>
-									<div className="relative">
-											<Input
-											placeholder="Create a password"
-											{...field}
-											id="signup-password"
-											type={showPassword ? "text" : "password"}
-											className="border-foreground/20 focus:border-accent pr-10"
-											/>
-											<button
-											type="button"
-											onClick={() => setShowPassword(!showPassword)}
-											className="absolute inset-y-0 right-0 pr-3 flex items-center text-foreground/50 hover:text-foreground"
-											tabIndex={-1}
-											>
-											{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-											</button>
-									</div>
-									</FormControl>
-									<FormMessage />
-							</FormItem>
-							)}
-					/>
+        <FormField
+          control={signupForm.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-gray-700 font-medium">Email</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors"
+                  disabled={isLoading}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-					<FormField
-							control={signupForm.control}
-							name="confirmPassword"
-							render={({ field }) => (
-							<FormItem>
-									<FormLabel>Confirm Password</FormLabel>
-									<FormControl>
-									<div className="relative">
-											<Input
-											placeholder="Confirm your password"
-											{...field}
-											id="confirm-password"
-											type={showConfirmPassword ? "text" : "password"}
-											className="border-foreground/20 focus:border-accent pr-10"
-											/>
-											<button
-											type="button"
-											onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-											className="absolute inset-y-0 right-0 pr-3 flex items-center text-foreground/50 hover:text-foreground"
-											tabIndex={-1}
-											>
-											{showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-											</button>
-									</div>
-									</FormControl>
-									<FormMessage />
-							</FormItem>
-							)}
-					/>
+        <FormField
+          control={signupForm.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-gray-700 font-medium">Password</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a password"
+                    className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors pr-12"
+                    disabled={isLoading}
+                    {...field}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-					<div className="flex items-center space-x-2">
-							<FormField
-							control={signupForm.control}
-							name="terms"
-							render={({ field }) => (
-									<FormItem className="flex items-center space-x-2">
-									<FormControl>
-											<Checkbox
-											id="terms"
-											checked={!!field.value}
-											onCheckedChange={(checked) => field.onChange(!!checked)}
-											/>
-									</FormControl>
-									<FormLabel className="text-sm text-foreground/70" htmlFor="terms">
-											I agree to the{" "}
-											<button type="button" className="text-orange-500 hover:text-orange-500/80">
-											Terms &amp; Conditions
-											</button>
-									</FormLabel>
-									<FormMessage />
-									</FormItem>
-							)}
-							/>
-					</div>
+        <FormField
+          control={signupForm.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-gray-700 font-medium">Confirm Password</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-colors pr-12"
+                    disabled={isLoading}
+                    {...field}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-					<Button type="submit" className="w-full bg-black hover:bg-black/90 text-white">
-							Create Account
-					</Button>
-					</form>
-			</Form>
+        <FormField
+          control={signupForm.control}
+          name="terms"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={isLoading}
+                  className="mt-1"
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel className="text-sm text-gray-600">
+                  I agree to the{" "}
+                  <button 
+                    type="button" 
+                    className="text-blue-600 hover:text-blue-700 underline font-medium"
+                  >
+                    Terms & Conditions
+                  </button>
+                  {" "}and{" "}
+                  <button 
+                    type="button" 
+                    className="text-blue-600 hover:text-blue-700 underline font-medium"
+                  >
+                    Privacy Policy
+                  </button>
+                </FormLabel>
+                <FormMessage />
+              </div>
+            </FormItem>
+          )}
+        />
+
+        <Button 
+          type="submit" 
+          className="w-full h-12 text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-xl shadow-lg font-medium transition-all duration-200 hover:shadow-xl"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating Account...
+            </>
+          ) : (
+            "Create Account"
+          )}
+        </Button>
+      </form>
+    </Form>
   );
-}
-
-interface IProps {
-	showPassword: boolean;
-	setShowPassword: (showPassword: boolean) => void;
-	showConfirmPassword: boolean;
-	setShowConfirmPassword: (showPassword: boolean) => void;
 }
 
 export default SignupForm;

@@ -1,15 +1,14 @@
 import { ThemeToggle } from "@/components/theme-toggle"
-import { FaBrain } from "react-icons/fa";
 import ProfileImage from "./profile-image";
+import Image from "next/image";
 
 export function Header({ user }: IProps) {
   return (
     <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white">
-          <FaBrain />
+        <div className="rounded-lg flex items-center justify-center">
+          <Image src="/logo.png" alt="Logo" width={100} height={100} />
         </div>
-        <span className="font-semibold text-lg text-foreground">learnXai</span>
       </div>
 
       <div className="flex items-center gap-3">

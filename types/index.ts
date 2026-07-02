@@ -13,6 +13,11 @@ export interface QuizQuestion {
 
 export type QuizMessageResponse = QuizQuestion[]; 
 
+export interface QuizQuestions {
+	title: string;
+	questions: QuizMessageResponse;
+}
+
 export interface QuizData {
 	title?: string;
 	estimatedTime?: string;
@@ -34,6 +39,25 @@ export interface AssistantMessageProps {
 export interface QuizMessageProps {
 	role: "quiz";
 	content: QuizData;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+  messageCount: number;
+  preview: string;
+}
+
+export interface StoredSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  preview: string;
+  messages: ChatMessageProps[];
 }
 
 

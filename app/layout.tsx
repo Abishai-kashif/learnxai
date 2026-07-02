@@ -4,6 +4,7 @@ import { Roboto } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/contexts/AuthContext"
 import "./globals.css"
 
 const roboto = Roboto({
@@ -26,9 +27,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans ${roboto.variable} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <Suspense fallback={null}>{children}</Suspense>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+            <Suspense fallback={null}>{children}</Suspense>
+          </ThemeProvider>
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

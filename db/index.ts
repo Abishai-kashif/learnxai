@@ -1,28 +1,54 @@
-import { Session } from "@/types";
+import { QuizMessageResponse } from "@/types";
 
 export async function fetchCurrentSession(id: string | undefined) {
-    try {
-        
-        const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
-        const URL = `${BASE_URL}/sessions/${id}`;
-    
-        if (!id) return [];
-    
-        const response = await fetch(URL, {
-            method: "GET",
-            // headers: {
-            // 	Authorization: `Bearer ${token}`,
-            // },
-        });
-    
-        if (!response.ok) {
-            throw Error("Error! in fetching user!");
-        }
-        return (await response.json()) || [];
-    } catch (error) {
-        console.error("Something went wrong while fetching Session: ", error)
-        return []
-    }
+	try {
+		const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
+		const URL = `${BASE_URL}/sessions/${id}`;
+
+		if (!id) return [];
+
+		const response = await fetch(URL, {
+			method: "GET",
+			// headers: {
+			// 	Authorization: `Bearer ${token}`,
+			// },
+		});
+
+		if (!response.ok) {
+			throw Error("Error! in fetching user!");
+		}
+		return (await response.json()) || [];
+	} catch (error) {
+		console.error("Something went wrong while fetching Session: ", error);
+		return [];
+	}
+}
+
+export async function saveUserQuiz(quizData: {
+	title: string;
+	questions: QuizMessageResponse;
+	estimatedTime: number;
+	userId: string;
+}): Promise<Response | null> {
+	try {
+		const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
+		const URL = `${BASE_URL}/quizzes/create`;
+
+		if (!quizData) return null;
+
+		const payload = JSON.stringify(quizData);
+
+		return await fetch(URL, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: payload,
+		});
+	} catch (error) {
+		console.error("Something went wrong while fetching Session: ", error);
+		return null;
+	}
 }
 
 // export async function createSession(session: Session) {
@@ -49,34 +75,34 @@ export async function fetchCurrentSession(id: string | undefined) {
 // }
 
 export async function fetchUser() {
-    const _user = {
-        name: "Abishai from Daraz",
-        email: "abishaikashif975@gmail.com",
-        id: '1',
-    };
+	const _user = {
+		name: "Abishai from Daraz",
+		email: "abishaikashif975@gmail.com",
+		id: "1",
+	};
 
-    try {
-        const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
-        const URL = `${BASE_URL}/me`;
-        const token =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmlzaGFpa2FzaGlmOTc1QGdtYWlsLmNvbSIsImV4cCI6MTc1ODI2Mjk0NH0.sY1FV9dCeDYMih0jX5hP44fS3K7AG1uTlvwts9nCjtk";
-    
-        console.log("fetching user with: ", token);
-        const response = await fetch(URL, {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-    
-        if (!response.ok) {
-            console.error("Error! in fetching user!");
-            return _user
-        }
-        return await response.json();
-    } catch (error) {
-        return _user
-    }
+	try {
+		const BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
+		const URL = `${BASE_URL}/me`;
+		const token =
+			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYmlzaGFpa2FzaGlmOTc1QGdtYWlsLmNvbSIsImV4cCI6MTc1ODI2Mjk0NH0.sY1FV9dCeDYMih0jX5hP44fS3K7AG1uTlvwts9nCjtk";
+
+		console.log("fetching user with: ", token);
+		const response = await fetch(URL, {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		if (!response.ok) {
+			console.error("Error! in fetching user!");
+			return _user;
+		}
+		return await response.json();
+	} catch (error) {
+		return _user;
+	}
 }
 
 // export async function fetchSessions(userId: string | undefined): Promise<Session> {
@@ -123,4 +149,4 @@ export async function fetchUser() {
 // 		console.error("Something went wrong while fetching Sessions: ", error);
 // 		return [];
 // 	}
-// } 
+// }

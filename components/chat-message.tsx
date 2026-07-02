@@ -1,29 +1,35 @@
 "use client"
 
-import { AssistantMessageProps, ChatMessageProps, QuizMessageProps, UserMessageProps } from "@/types"
-import { useState } from "react"
-import { FaRobot } from "react-icons/fa"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { CheckCircle, Circle, ArrowLeft, ArrowRight, Trophy, Rabbit } from "lucide-react"
 import ProfileImage from "./profile-image"
+import { apiClient } from "@/lib/api"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark'
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { saveUserQuiz } from "@/db"
+import { AssistantMessageProps, ChatMessageProps, QuizMessageProps, UserMessageProps } from "@/types"
+import { ArrowLeft, ArrowRight, Check, Circle, Rabbit, Save, Trophy } from "lucide-react"
+import { useId, useState } from "react"
+import { FaRobot } from "react-icons/fa"
 
 const ChatMessage = (props: ChatMessageProps) => {
-  const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({})
 
   // User message variant
   if (props.role === "user") {
     const { content, user = { name: "US" } } = props as UserMessageProps
     return (
       <div className="flex gap-3 justify-end">
-        <div className="bg-orange-500 text-white rounded-lg p-4 max-w-md">
-          <p className="text-sm">{content}</p>
-        </div>
-        <ProfileImage user={user} />
-      </div>
+       <div className="bg-orange-500 text-white rounded-lg p-4 max-w-md break-words whitespace-pre-wrap overflow-hidden">
+  <p className="text-sm break-words whitespace-pre-wrap overflow-hidden">
+    {content}
+  </p>
+</div>
+</div>
     )
   }
 
@@ -47,14 +53,28 @@ const ChatMessage = (props: ChatMessageProps) => {
   }
 
   // Quiz content role
-  if (props.role === "quiz" && !(typeof props.content == "string")) {
-    const { content } = props
+  if (props.role === "quiz") {
+    const quizId = useId()
+    const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: string }>({})
+    const { content } = props as QuizMessageProps
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [quizCompleted, setQuizCompleted] = useState(false)
+    const [quizSaved, setQuizSaved] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const [attemptId, setAttemptId] = useState<string | null>(null)
+    const [quizStartTime, setQuizStartTime] = useState<Date | null>(null)
     const [quizResults, setQuizResults] = useState<{
       score: number
       total: number
       answers: Record<string, string>
+      detailedAnswers: Array<{
+        question_index: number
+        question: string
+        selected_answer: string
+        correct_answer: string
+        is_correct: boolean
+        time_taken?: number
+      }>
     } | null>(null)
 
     const questions = content.questions || []
@@ -69,12 +89,12 @@ const ChatMessage = (props: ChatMessageProps) => {
       }))
     }
 
-    const handleNext = () => {
+    const handleNext = async () => {
       if (currentQuestionIndex < totalQuestions - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1)
       } else {
         // Quiz completed
-        calculateResults()
+        await calculateResults()
         setQuizCompleted(true)
       }
     }
@@ -85,23 +105,47 @@ const ChatMessage = (props: ChatMessageProps) => {
       }
     }
 
-    const calculateResults = () => {
+    const calculateResults = async () => {
       let correctAnswers = 0
       const userAnswers: Record<string, string> = {}
+      const detailedAnswers: Array<{
+        question_index: number
+        question: string
+        selected_answer: string
+        correct_answer: string
+        is_correct: boolean
+        time_taken?: number
+      }> = []
 
       questions.forEach((question, index) => {
-        const userAnswer = selectedAnswers[index]
-        userAnswers[`question_${index}`] = userAnswer || ""
-        if (userAnswer === question.answer) {
+        const userAnswer = selectedAnswers[index] || ""
+        const isCorrect = userAnswer === question.answer
+        
+        userAnswers[`question_${index}`] = userAnswer
+        if (isCorrect) {
           correctAnswers++
         }
+
+        detailedAnswers.push({
+          question_index: index,
+          question: question.question,
+          selected_answer: userAnswer,
+          correct_answer: question.answer,
+          is_correct: isCorrect
+        })
       })
 
-      setQuizResults({
+      const results = {
         score: correctAnswers,
         total: questions.length,
         answers: userAnswers,
-      })
+        detailedAnswers
+      }
+
+      setQuizResults(results)
+
+      // Save quiz attempt to session history
+      await saveQuizAttempt(results)
     }
 
     const handleRetryQuiz = () => {
@@ -109,6 +153,88 @@ const ChatMessage = (props: ChatMessageProps) => {
       setQuizResults(null)
       setCurrentQuestionIndex(0)
       setSelectedAnswers({})
+      setAttemptId(null)
+      setQuizStartTime(null)
+      
+      // Start a new attempt if quiz is already saved
+      if (quizSaved) {
+        // We'll need to get the quiz ID from the saved quiz
+        // For now, we'll start tracking when user begins answering
+      }
+    }
+
+    const saveQuiz = async () => {
+      if (quizSaved || isSaving) return
+      
+      setIsSaving(true)
+      try {
+        const dbQuiz = {
+          title: content.title || "Generated Quiz",
+          questions: content.questions || [],
+          estimatedTime: 5,
+          userId: ''
+        }
+
+        const response = await saveUserQuiz(dbQuiz)
+
+        console.log('Save quiz result:')
+        if (response?.ok) {
+          setQuizSaved(true)
+          console.log('Quiz saved successfully')
+        } else {
+          console.error('Failed to save quiz:')
+        }
+      } catch (error) {
+        console.error('Error saving quiz:', error)
+      } finally {
+        setIsSaving(false)
+      }
+    }
+
+    console.log('QuizMessage render:', { quizCompleted, quizResults, currentQuestionIndex, selectedAnswers })
+
+    const startQuizAttempt = async (quizId: string) => {
+      try {
+        const result = await apiClient.startQuizAttempt(quizId)
+        if (result.success) {
+          setAttemptId(result.attempt_id)
+          setQuizStartTime(new Date())
+          console.log('Quiz attempt started with ID:', result.attempt_id)
+        }
+      } catch (error) {
+        console.error('Error starting quiz attempt:', error)
+      }
+    }
+
+    const saveQuizAttempt = async (results: any) => {
+      if (!attemptId) {
+        console.warn('No attempt ID available for saving quiz attempt')
+        return
+      }
+
+      try {
+        const timeTaken = quizStartTime ? (new Date().getTime() - quizStartTime.getTime()) / 1000 : undefined
+        const percentage = (results.score / results.total) * 100
+
+        const attemptData = {
+          user_id: "", // Will be set by backend from auth
+          quiz_id: "", // Will be set by backend
+          quiz_title: content.title || "Generated Quiz",
+          answers: results.detailedAnswers,
+          score: results.score,
+          total_questions: results.total,
+          percentage: percentage,
+          time_taken: timeTaken,
+          status: "completed"
+        }
+
+        const result = await apiClient.completeQuizAttempt(attemptId, attemptData)
+        if (result.success) {
+          console.log('Quiz attempt completed successfully')
+        }
+      } catch (error) {
+        console.error('Error saving quiz attempt:', error)
+      }
     }
 
     if (quizCompleted && quizResults) {
@@ -179,9 +305,35 @@ const ChatMessage = (props: ChatMessageProps) => {
                     </CardDescription>
                   </div>
                 </div>
-                <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
-                  {currentQuestionIndex + 1}/{totalQuestions}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={saveQuiz}
+                    disabled={quizSaved || isSaving}
+                    variant="outline"
+                    size="sm"
+                    className={`${quizSaved ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-950 dark:border-green-800 dark:text-green-300' : ''}`}
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-500 mr-2"></div>
+                        Saving...
+                      </>
+                    ) : quizSaved ? (
+                      <>
+                        <Check className="h-3 w-3 mr-2" />
+                        Saved
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-3 w-3 mr-2" />
+                        Save Quiz
+                      </>
+                    )}
+                  </Button>
+                  <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                    {currentQuestionIndex + 1}/{totalQuestions}
+                  </Badge>
+                </div>
               </div>
 
               <div className="w-full bg-muted rounded-full h-2 mb-4">
@@ -216,10 +368,10 @@ const ChatMessage = (props: ChatMessageProps) => {
                       >
                         <RadioGroupItem
                           value={option}
-                          id={`q${currentQuestionIndex}_option${index}`}
+                          id={`${quizId}-q${currentQuestionIndex}_option${index}`}
                         />
                         <Label
-                          htmlFor={`q${currentQuestionIndex}_option${index}`}
+                          htmlFor={`${quizId}-q${currentQuestionIndex}_option${index}`}
                           className="flex-1 cursor-pointer font-normal"
                         >
                           <span className="font-medium text-muted-foreground mr-2">
